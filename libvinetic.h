@@ -44,6 +44,7 @@ extern int vin_is_not_ready(struct vinetic_context *ctx);
 extern u_int16_t vin_read_dia(struct vinetic_context *ctx);
 
 extern int vin_resync(struct vinetic_context *ctx);
+extern int vin_cerr_acknowledge(struct vinetic_context *ctx);
 
 extern int vin_poll_set(struct vinetic_context *ctx, int poll);
 

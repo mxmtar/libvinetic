@@ -99,6 +99,36 @@ int vin_resync(struct vinetic_context *ctx)
 	return rc;
 }
 
+int vin_cerr_acknowledge(struct vinetic_context *ctx)
+{
+	int rc;
+	off64_t lsrc;
+	union vin_cmd cmd;
+
+	cmd.parts.first.bits.rw = VIN_WRITE;
+	cmd.parts.first.bits.sc = VIN_SC_NO;
+	cmd.parts.first.bits.bc = VIN_BC_NO;
+	cmd.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd.parts.first.bits.res = 0;
+	cmd.parts.first.bits.chan = 0;
+	cmd.parts.second.eop.bits.mod = VIN_MOD_CONT;
+	cmd.parts.second.eop.bits.ecmd  = VIN_EOP_CERR_ACK;
+	cmd.parts.second.eop.bits.length = 0;
+	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
+		ctx->error = errno;
+		printf("lseek()=%ld\n", (long int)lsrc);
+		rc = (int)lsrc;
+		goto vin_cerr_acknowledge_end;
+	}
+	if ((rc = write(ctx->dev_fd, &cmd.full, 0)) < 0) {
+		ctx->error = errno;
+		printf("write()=%ld\n", (long int)rc);
+		goto vin_cerr_acknowledge_end;
+	}
+
+vin_cerr_acknowledge_end:
+	return rc;
+}
 
 int vin_poll_set(struct vinetic_context *ctx, int poll)
 {
@@ -134,6 +164,8 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 	union vin_cmd cmd;
 	u_int8_t *data = (u_int8_t *)buf;
 	size_t length;
+	union vin_cmd auxcmd;
+	struct vin_read_bxsr bxsr;
 
 	cmd.full = 0;
 	if (count < 2) {
@@ -150,15 +182,86 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		length = count - 4;
 	}
 
+	// check mailbox status
+	auxcmd.full = 0;
+	auxcmd.parts.first.full = VIN_rBXSR;
+	if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = (ssize_t)lsrc;
+		goto vin_write_end;
+	}
+	if ((rc = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		goto vin_write_end;
+	}
+// 	printf("%04x\n", bxsr.bxsr1.full);
+// 	printf("%04x\n", bxsr.bxsr2.full);
+	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
+// 		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+// 		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+// 		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+		// acknowledge error
+		auxcmd.full = 0;
+		auxcmd.parts.first.full = VIN_wPHIERR;
+		if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
+			ctx->errorline = __LINE__ - 1;
+			ctx->error = errno;
+			rc = (ssize_t)lsrc;
+			goto vin_write_end;
+		}
+		if ((rc = write(ctx->dev_fd, &auxcmd.full, 0)) < 0) {
+			ctx->errorline = __LINE__ - 1;
+			ctx->error = errno;
+			goto vin_write_end;
+		}
+		// wait for recovery
+		usleep(500);
+	}
+	// base write command
 	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		printf("lseek()=%ld\n", (long int)lsrc);
+		rc = (ssize_t)lsrc;
 		goto vin_write_end;
 	}
 
 	if ((rc = write(ctx->dev_fd, data+4, length)) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		printf("write()=%ld\n", (long int)rc);
+		goto vin_write_end;
+	}
+
+	// check mailbox status
+	auxcmd.full = 0;
+	auxcmd.parts.first.full = VIN_rBXSR;
+	if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = (ssize_t)lsrc;
+		goto vin_write_end;
+	}
+	if ((rc = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		goto vin_write_end;
+	}
+	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
+		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+	}
+	if (bxsr.bxsr1.bits.cerr) {
+		printf("cerr=%u\n", bxsr.bxsr1.bits.cerr);
+		if (vin_cerr_acknowledge(ctx) < 0) {
+			ctx->errorline = __LINE__ - 1;
+			ctx->error = errno;
+			goto vin_write_end;
+		}
+		rc = -1;
 		goto vin_write_end;
 	}
 
@@ -170,13 +273,55 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 {
 	ssize_t rc;
 	off64_t lsrc;
+	union vin_cmd auxcmd;
+	struct vin_read_bxsr bxsr;
 
-	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
+	// check mailbox status
+	auxcmd.full = 0;
+	auxcmd.parts.first.full = VIN_rBXSR;
+	if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = (ssize_t)lsrc;
+		goto vin_read_end;
+	}
+	if ((rc = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_read_end;
 	}
-
+// 	printf("%04x\n", bxsr.bxsr1.full);
+// 	printf("%04x\n", bxsr.bxsr2.full);
+	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
+// 		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+// 		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+// 		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+		// acknowledge error
+		auxcmd.full = 0;
+		auxcmd.parts.first.full = VIN_wPHIERR;
+		if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
+			ctx->errorline = __LINE__ - 1;
+			ctx->error = errno;
+			rc = (ssize_t)lsrc;
+			goto vin_read_end;
+		}
+		if ((rc = write(ctx->dev_fd, &auxcmd.full, 0)) < 0) {
+			ctx->errorline = __LINE__ - 1;
+			ctx->error = errno;
+			goto vin_read_end;
+		}
+		// wait for recovery
+		usleep(500);
+	}
+	// base read command
+	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = (ssize_t)lsrc;
+		goto vin_read_end;
+	}
 	if ((rc = read(ctx->dev_fd, buf, count)) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_read_end;
 	}
@@ -190,6 +335,7 @@ u_int16_t vin_phi_revision(struct vinetic_context *ctx)
 	u_int16_t rev;
 
 	if (ioctl(ctx->dev_fd, VINETIC_REVISION, &rev) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		rev = 0;
 	}
@@ -202,6 +348,7 @@ u_int16_t vin_phi_checksum(struct vinetic_context *ctx)
 	u_int16_t csum;
 
 	if (ioctl(ctx->dev_fd, VINETIC_CHECKSUM, &csum) < 0) {
+		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		csum = 0;
 	}
@@ -212,68 +359,74 @@ u_int16_t vin_phi_checksum(struct vinetic_context *ctx)
 int vin_phi_disable_interrupt(struct vinetic_context *ctx)
 {
 	int rc = ioctl(ctx->dev_fd, VINETIC_DISABLE_IRQ, NULL);
+	ctx->errorline = __LINE__ - 1;
 	ctx->error = errno;
 	return rc;
 }
 
 int vin_check_mbx_empty(struct vinetic_context *ctx)
 {
-	ssize_t res;
+	ssize_t rc;
 	size_t cnt;
 	union vin_cmd cmd;
 	struct vin_read_bxsr bxsr;
 
-	res = 0;
+	rc = 0;
 	cnt = 255;
 	cmd.full = 0;
 	cmd.parts.first.full = VIN_rBXSR;
 
 	for (;;)
 	{
-		if ((res = vin_read(ctx, cmd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
+		if ((rc = vin_read(ctx, cmd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
+			ctx->errorline = __LINE__ - 1;
 			ctx->error = errno;
 			goto vin_check_mbx_empty_end;
 		}
 		if (bxsr.bxsr2.bits.mbx_empty) break;
 		if (!cnt--) {
-			res = -EIO;
+			ctx->errorline = __LINE__ - 1;
 			ctx->error = -EIO;
+			rc = -EIO;
 			goto vin_check_mbx_empty_end;
 		}
-		usleep(125);
+		usleep(1000);
 	}
+
 vin_check_mbx_empty_end:
-	return res;
+	return rc;
 }
 
 int vin_wait_dl_rdy(struct vinetic_context *ctx)
 {
-	ssize_t res;
+	ssize_t rc;
 	size_t cnt;
 	union vin_cmd cmd;
 	struct vin_read_hwsr hwsr;
 
-	res = 0;
-	cnt = 8000;
+	rc = 0;
 	cmd.full = 0;
 	cmd.parts.first.full = VIN_rHWSR;
-
+	cnt = 8000;
 	for (;;)
 	{
-		if ((res = vin_read(ctx, cmd, &hwsr, sizeof(struct vin_read_hwsr))) < 0) {
+		if ((rc = vin_read(ctx, cmd, &hwsr, sizeof(struct vin_read_hwsr))) < 0) {
+			ctx->errorline = __LINE__ - 1;
 			ctx->error = errno;
 			goto vin_wait_dl_ready_end;
 		}
 		if (hwsr.hwsr2.bits.dl_rdy) break;
 		if (!cnt--) {
-			res = -EIO;
+			ctx->errorline = __LINE__ - 1;
 			ctx->error = -EIO;
+			rc = -EIO;
 			goto vin_wait_dl_ready_end;
 		}
 		usleep(125);
 	}
+
 vin_wait_dl_ready_end:
-	return res;
+	return rc;
 }
 
 int vin_download_edsp_firmvare(struct vinetic_context *ctx)
