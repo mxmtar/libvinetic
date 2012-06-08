@@ -20,6 +20,12 @@
 
 #include "libvinetic.h"
 
+#define PRINTF(_fmt, _args...) \
+	do { \
+		fprintf(stdout, _fmt, ##_args); \
+		fflush(stdout); \
+	} while (0)
+
 void vin_init(struct vinetic_context *ctx, char *path)
 {
 	strncpy(ctx->dev_path, path, sizeof(ctx->dev_path));
@@ -62,6 +68,13 @@ void vin_close(struct vinetic_context *ctx)
 int vin_reset(struct vinetic_context *ctx)
 {
 	int rc = ioctl(ctx->dev_fd, VINETIC_RESET, NULL);
+	ctx->error = errno;
+	return rc;
+}
+
+int vin_reset_rdyq(struct vinetic_context *ctx)
+{
+	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_RDYQ, NULL);
 	ctx->error = errno;
 	return rc;
 }
@@ -116,13 +129,13 @@ int vin_cerr_acknowledge(struct vinetic_context *ctx)
 	cmd.parts.second.eop.bits.length = 0;
 	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
 		ctx->error = errno;
-		printf("lseek()=%ld\n", (long int)lsrc);
+		PRINTF("lseek()=%ld\n", (long int)lsrc);
 		rc = (int)lsrc;
 		goto vin_cerr_acknowledge_end;
 	}
 	if ((rc = write(ctx->dev_fd, &cmd.full, 0)) < 0) {
 		ctx->error = errno;
-		printf("write()=%ld\n", (long int)rc);
+		PRINTF("write()=%ld\n", (long int)rc);
 		goto vin_cerr_acknowledge_end;
 	}
 
@@ -196,12 +209,12 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		ctx->error = errno;
 		goto vin_write_end;
 	}
-// 	printf("%04x\n", bxsr.bxsr1.full);
-// 	printf("%04x\n", bxsr.bxsr2.full);
+// 	PRINTF("%04x\n", bxsr.bxsr1.full);
+// 	PRINTF("%04x\n", bxsr.bxsr2.full);
 	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
-// 		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
-// 		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
-// 		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+// 		PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+// 		PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+// 		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 		// acknowledge error
 		auxcmd.full = 0;
 		auxcmd.parts.first.full = VIN_wPHIERR;
@@ -223,7 +236,7 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 	if ((lsrc = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
 		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
-		printf("lseek()=%ld\n", (long int)lsrc);
+		PRINTF("lseek()=%ld\n", (long int)lsrc);
 		rc = (ssize_t)lsrc;
 		goto vin_write_end;
 	}
@@ -231,7 +244,7 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 	if ((rc = write(ctx->dev_fd, data+4, length)) < 0) {
 		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
-		printf("write()=%ld\n", (long int)rc);
+		PRINTF("write()=%ld\n", (long int)rc);
 		goto vin_write_end;
 	}
 
@@ -250,17 +263,19 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		goto vin_write_end;
 	}
 	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
-		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
-		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
-		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+		PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+		PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 	}
 	if (bxsr.bxsr1.bits.cerr) {
-		printf("cerr=%u\n", bxsr.bxsr1.bits.cerr);
+		PRINTF("cerr=%u\n", bxsr.bxsr1.bits.cerr);
+#if 0
 		if (vin_cerr_acknowledge(ctx) < 0) {
 			ctx->errorline = __LINE__ - 1;
 			ctx->error = errno;
 			goto vin_write_end;
 		}
+#endif
 		rc = -1;
 		goto vin_write_end;
 	}
@@ -290,12 +305,12 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 		ctx->error = errno;
 		goto vin_read_end;
 	}
-// 	printf("%04x\n", bxsr.bxsr1.full);
-// 	printf("%04x\n", bxsr.bxsr2.full);
+// 	PRINTF("%04x\n", bxsr.bxsr1.full);
+// 	PRINTF("%04x\n", bxsr.bxsr2.full);
 	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
-// 		printf("host_err=%u\n", bxsr.bxsr2.bits.host_err);
-// 		printf("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
-// 		printf("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+// 		PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+// 		PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+// 		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 		// acknowledge error
 		auxcmd.full = 0;
 		auxcmd.parts.first.full = VIN_wPHIERR;
@@ -383,6 +398,7 @@ int vin_check_mbx_empty(struct vinetic_context *ctx)
 			ctx->error = errno;
 			goto vin_check_mbx_empty_end;
 		}
+// 		PRINTF("mbx_empty=%u\n", bxsr.bxsr2.bits.mbx_empty);
 		if (bxsr.bxsr2.bits.mbx_empty) break;
 		if (!cnt--) {
 			ctx->errorline = __LINE__ - 1;
@@ -429,7 +445,7 @@ vin_wait_dl_ready_end:
 	return rc;
 }
 
-int vin_download_edsp_firmvare(struct vinetic_context *ctx)
+int vin_download_edsp_firmware(struct vinetic_context *ctx)
 {
 	union vin_cmd cmd;
 	union vin_cmd_short cmd_short;
@@ -544,7 +560,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_chunk_size = (seg_size < 252) ? (seg_size) : (252);
-// 			printf("pram: %lu %lu\n", (unsigned long int)seg_chunk_size, (unsigned long int)seg_chunk_size);
+// 			PRINTF("pram: %lu %lu\n", (unsigned long int)seg_chunk_size, (unsigned long int)seg_chunk_size);
 			if (read(fd, cmd_eop_access_pram.data, seg_chunk_size*2) < 0) {
 				ctx->errorline = __LINE__ - 1;
 				ctx->error = errno;
@@ -608,7 +624,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 		seg_addr_end = seg_addr_start + (seg_size/3)*2 - 2;
 		seg_addr_end_high = (seg_addr_end >> 16) & 0xffff;
 		seg_addr_end_low = (seg_addr_end >> 0) & 0xffff;
-// 		printf("pram seg %08x:%08x - %lu\n", seg_addr_start, seg_addr_end, (unsigned long int)seg_size);
+// 		PRINTF("pram seg %08x:%08x - %lu\n", seg_addr_start, seg_addr_end, (unsigned long int)seg_size);
 		fd_offset += sizeof(struct vin_xram_segment_header) + seg_size*2;
 		// Set PRAM Address
 		cmd_eop_set_pram_address.header.parts.first.bits.rw = VIN_WRITE;
@@ -645,7 +661,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 			goto vin_download_edsp_firmware_error;
 		}
 	}
-	printf("\npram: checksum=0x%04x\n", cmd_eop_crc_pram.crc);
+	PRINTF("\npram: checksum=0x%04x\n", cmd_eop_crc_pram.crc);
 #endif
 	close(fd);
 
@@ -714,7 +730,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_chunk_size = (seg_size < 252) ? (seg_size) : (252);
-// 			printf("dram: %lu %lu\n", (unsigned long int)seg_chunk_size, (unsigned long int)seg_chunk_size);
+// 			PRINTF("dram: %lu %lu\n", (unsigned long int)seg_chunk_size, (unsigned long int)seg_chunk_size);
 			if (read(fd, cmd_eop_access_dram.data, seg_chunk_size*2) < 0) {
 				ctx->errorline = __LINE__ - 1;
 				ctx->error = errno;
@@ -778,7 +794,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 		seg_addr_end = seg_addr_start + seg_size - 1;
 		seg_addr_end_high = (seg_addr_end >> 16) & 0xffff;
 		seg_addr_end_low = (seg_addr_end >> 0) & 0xffff;
-// 		printf("dram seg %08x:%08x - %lu\n", seg_addr_start, seg_addr_end, (unsigned long int)seg_size);
+// 		PRINTF("dram seg %08x:%08x - %lu\n", seg_addr_start, seg_addr_end, (unsigned long int)seg_size);
 		fd_offset += sizeof(struct vin_xram_segment_header) + seg_size*2;
 		// Set DRAM Address
 		cmd_eop_set_dram_address.header.parts.first.bits.rw = VIN_WRITE;
@@ -813,7 +829,7 @@ int vin_download_edsp_firmvare(struct vinetic_context *ctx)
 			goto vin_download_edsp_firmware_error;
 		}
 	}
-	printf("\ndram: checksum=0x%04x\n", cmd_eop_crc_dram.crc);
+	PRINTF("\ndram: checksum=0x%04x\n", cmd_eop_crc_dram.crc);
 #endif
 	close(fd);
 
@@ -944,12 +960,12 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
 	}
-// 	printf("\naddr start=0x%08x\n", addr_start);
-// 	printf("addr end=0x%08x\n", addr_end);
+// 	PRINTF("\naddr start=0x%08x\n", addr_start);
+// 	PRINTF("addr end=0x%08x\n", addr_end);
 
 	// get data
 	data_size = (addr_end - addr_start + 1);
-// 	printf("data size=%lu\n", data_size);
+// 	PRINTF("data size=%lu\n", data_size);
 	while (fgets(fpbuf, sizeof(fpbuf), fp))
 	{
 		if (!strncasecmp(fpbuf, "[DATA]", strlen("[DATA]"))) {
@@ -1006,7 +1022,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		}
 // 		checksum = tmp_u32 & 0xffff;
 	}
-// 	printf("checksum=0x%04x\n", checksum);
+// 	PRINTF("checksum=0x%04x\n", checksum);
 
 	// get dschkr
 	while (fgets(fpbuf, sizeof(fpbuf), fp))
@@ -1030,7 +1046,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		}
 // 		dschkr = tmp_u32 & 0xffff;
 	}
-// 	printf("dschkr=0x%04x\n", dschkr);
+// 	PRINTF("dschkr=0x%04x\n", dschkr);
 
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
@@ -1136,7 +1152,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
 	}
-	printf("crc=0x%04x\n", cmd_eop_crc_fpi.crc);
+	PRINTF("crc=0x%04x\n", cmd_eop_crc_fpi.crc);
 #endif
 #if 0
 	// DSCHKR
@@ -1153,7 +1169,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
 	}
-	printf("crc=0x%04x\n", cmd_sop_dschkr.ds_check);
+	PRINTF("crc=0x%04x\n", cmd_sop_dschkr.ds_check);
 #endif
 
 	free(data);

@@ -40,6 +40,7 @@ extern void vin_init(struct vinetic_context *ctx, char *path);
 extern int vin_open(struct vinetic_context *ctx);
 extern void vin_close(struct vinetic_context *ctx);
 extern int vin_reset(struct vinetic_context *ctx);
+extern int vin_reset_rdyq(struct vinetic_context *ctx);
 extern int vin_is_not_ready(struct vinetic_context *ctx);
 extern u_int16_t vin_read_dia(struct vinetic_context *ctx);
 
@@ -65,7 +66,7 @@ extern u_int16_t vin_phi_revision(struct vinetic_context *ctx);
 extern u_int16_t vin_phi_checksum(struct vinetic_context *ctx);
 extern int vin_phi_disable_interrupt(struct vinetic_context *ctx);
 
-extern int vin_download_edsp_firmvare(struct vinetic_context *ctx);
+extern int vin_download_edsp_firmware(struct vinetic_context *ctx);
 
 extern int vin_download_alm_dsp(struct vinetic_context *ctx, char *path);
 extern int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan);
