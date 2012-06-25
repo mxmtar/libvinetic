@@ -23,12 +23,14 @@ struct vinetic_context {
 	char alm_dsp_ab_path[PATH_MAX];
 	char alm_dsp_cd_path[PATH_MAX];
 
+	char cram_path[PATH_MAX];
+
 	int error;
 	int errorline;
 
 	u_int16_t revision;
 
-	struct vin_edsp_sw_version_register edsp_sw_version_register;
+	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
 };
 
 extern void vin_init(struct vinetic_context *ctx, char *path);
@@ -36,11 +38,13 @@ extern void vin_set_pram(struct vinetic_context *ctx, char *path);
 extern void vin_set_dram(struct vinetic_context *ctx, char *path);
 extern void vin_set_alm_dsp_ab(struct vinetic_context *ctx, char *path);
 extern void vin_set_alm_dsp_cd(struct vinetic_context *ctx, char *path);
+extern void vin_set_cram(struct vinetic_context *ctx, char *path);
 extern void vin_init(struct vinetic_context *ctx, char *path);
 extern int vin_open(struct vinetic_context *ctx);
 extern void vin_close(struct vinetic_context *ctx);
 extern int vin_reset(struct vinetic_context *ctx);
 extern int vin_reset_rdyq(struct vinetic_context *ctx);
+extern int vin_flush_mbox(struct vinetic_context *ctx);
 extern int vin_is_not_ready(struct vinetic_context *ctx);
 extern u_int16_t vin_read_dia(struct vinetic_context *ctx);
 
@@ -70,6 +74,12 @@ extern int vin_download_edsp_firmware(struct vinetic_context *ctx);
 
 extern int vin_download_alm_dsp(struct vinetic_context *ctx, char *path);
 extern int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan);
+
+extern int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path);
+
+extern int vin_write_sop_generic(struct vinetic_context *ctx, unsigned int chan, u_int16_t offset, u_int16_t data);
+extern int vin_alm_channel_test_set(struct vinetic_context *ctx, unsigned int chan, int en);
+extern int vin_alm_channel_dcctl_pram_set(struct vinetic_context *ctx, unsigned int chan, int pram_dcc);
 
 extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 

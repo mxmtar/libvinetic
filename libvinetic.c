@@ -52,6 +52,11 @@ void vin_set_alm_dsp_cd(struct vinetic_context *ctx, char *path)
 	strncpy(ctx->alm_dsp_cd_path, path, sizeof(ctx->alm_dsp_cd_path));
 }
 
+void vin_set_cram(struct vinetic_context *ctx, char *path)
+{
+	strncpy(ctx->cram_path, path, sizeof(ctx->cram_path));
+}
+
 int vin_open(struct vinetic_context *ctx)
 {
 	ctx->dev_fd = open(ctx->dev_path, O_RDWR);
@@ -75,6 +80,13 @@ int vin_reset(struct vinetic_context *ctx)
 int vin_reset_rdyq(struct vinetic_context *ctx)
 {
 	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_RDYQ, NULL);
+	ctx->error = errno;
+	return rc;
+}
+
+int vin_flush_mbox(struct vinetic_context *ctx)
+{
+	int rc = ioctl(ctx->dev_fd, VINETIC_FLUSH_MBOX, NULL);
 	ctx->error = errno;
 	return rc;
 }
@@ -268,6 +280,8 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 	}
 	if (bxsr.bxsr1.bits.cerr) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno = EIO;
 		PRINTF("cerr=%u\n", bxsr.bxsr1.bits.cerr);
 #if 0
 		if (vin_cerr_acknowledge(ctx) < 0) {
@@ -402,7 +416,7 @@ int vin_check_mbx_empty(struct vinetic_context *ctx)
 		if (bxsr.bxsr2.bits.mbx_empty) break;
 		if (!cnt--) {
 			ctx->errorline = __LINE__ - 1;
-			ctx->error = -EIO;
+			ctx->error = errno = EIO;
 			rc = -EIO;
 			goto vin_check_mbx_empty_end;
 		}
@@ -914,7 +928,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 	u_int32_t tmp_u32;
 
 	// open ALM DSP patch file
-	if ((fp = fopen(path, "r")) < 0) {
+	if (!(fp = fopen(path, "r"))) {
 		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
@@ -1197,13 +1211,13 @@ int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan)
 	cmd_sop_ccr.header.parts.first.bits.chan = chan;
 	cmd_sop_ccr.header.parts.second.sop.bits.offset = VIN_SOP_CCR;
 	cmd_sop_ccr.header.parts.second.sop.bits.length = 1;
-	cmd_sop_ccr.ccr.pd_cbias = 0;
-	cmd_sop_ccr.ccr.pd_cvcm = 0;
-	cmd_sop_ccr.ccr.jump_ac1 = 0;
-	cmd_sop_ccr.ccr.jump_ac2 = 0;
-	cmd_sop_ccr.ccr.jump_ac3 = 1;
-	cmd_sop_ccr.ccr.jump_dc = 0;
-	cmd_sop_ccr.ccr.jump_res0 = 0;
+	cmd_sop_ccr.sop_ccr.pd_cbias = 0;
+	cmd_sop_ccr.sop_ccr.pd_cvcm = 0;
+	cmd_sop_ccr.sop_ccr.jump_ac1 = 0;
+	cmd_sop_ccr.sop_ccr.jump_ac2 = 0;
+	cmd_sop_ccr.sop_ccr.jump_ac3 = 1;
+	cmd_sop_ccr.sop_ccr.jump_dc = 0;
+	cmd_sop_ccr.sop_ccr.res0 = 0;
 	if ((res = vin_write(ctx, &cmd_sop_ccr, sizeof(struct vin_cmd_sop_ccr))) < 0) {
 		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
@@ -1212,6 +1226,164 @@ int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan)
 	return 0;
 
 vin_jump_alm_dsp_error:
+	return -1;
+}
+
+int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path)
+{
+
+	FILE * fp = NULL;
+	char fpbuf[512];
+	char hdr[16];
+	u_int32_t cfd[6];
+
+	int res;
+
+	struct vin_cmd_cop_generic cmd_cop_generic;
+
+	// open CRAM *.byt file
+	if (!(fp = fopen(path, "r"))) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		goto vin_download_cram_error;
+	}
+
+	while (fgets(fpbuf, sizeof(fpbuf), fp))
+	{
+		res = sscanf(fpbuf, " %[A-Z0-9_] = 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X", hdr, &cfd[0], &cfd[1], &cfd[2], &cfd[3], &cfd[4], &cfd[5]);
+		if (res == 7) {
+			// Check for MBX-EMPTY
+			if (vin_check_mbx_empty(ctx) < 0) {
+				ctx->errorline = __LINE__ - 1;
+				ctx->error = errno;
+				goto vin_download_cram_error;
+			}
+			// write coefficient
+			cmd_cop_generic.header.parts.first.full = cfd[0] & 0xffff;
+			cmd_cop_generic.header.parts.second.full = cfd[1] & 0xffff;
+			cmd_cop_generic.word[0] = cfd[2] & 0xffff;
+			cmd_cop_generic.word[1] = cfd[3] & 0xffff;
+			cmd_cop_generic.word[2] = cfd[4] & 0xffff;
+			cmd_cop_generic.word[3] = cfd[5] & 0xffff;
+			if ((res = vin_write(ctx, &cmd_cop_generic, sizeof(struct vin_cmd_cop_generic))) < 0) {
+				ctx->errorline = __LINE__ - 1;
+				ctx->error = errno;
+				goto vin_download_cram_error;
+			}
+		}
+	}
+	fclose(fp);
+	return 0;
+
+vin_download_cram_error:
+	if (fp) fclose(fp);
+	return -1;
+}
+
+int vin_write_sop_generic(struct vinetic_context *ctx, unsigned int chan, u_int16_t offset, u_int16_t data)
+{
+	struct vin_cmd_sop_generic cmd_sop_generic;
+
+	// Write SOP generic Register
+	cmd_sop_generic.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_sop_generic.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_sop_generic.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_sop_generic.header.parts.first.bits.cmd = VIN_CMD_SOP;
+	cmd_sop_generic.header.parts.first.bits.res = 0;
+	cmd_sop_generic.header.parts.first.bits.chan = chan;
+	cmd_sop_generic.header.parts.second.sop.bits.offset = offset;
+	cmd_sop_generic.header.parts.second.sop.bits.length = 1;
+	cmd_sop_generic.word = data;
+	if (vin_write(ctx, &cmd_sop_generic, sizeof(struct vin_cmd_sop_generic)) < 0) {
+		ctx->error = errno;
+		goto vin_write_sop_generic_error;
+	}
+
+	return 0;
+
+vin_write_sop_generic_error:
+	return -1;
+}
+
+int vin_alm_channel_test_set(struct vinetic_context *ctx, unsigned int chan, int en)
+{
+
+	struct vin_cmd_sop_bcr1 cmd_sop_bcr1;
+
+	// Read SOP BCR1 Register
+	cmd_sop_bcr1.header.parts.first.bits.rw = VIN_READ;
+	cmd_sop_bcr1.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.cmd = VIN_CMD_SOP;
+	cmd_sop_bcr1.header.parts.first.bits.res = 0;
+	cmd_sop_bcr1.header.parts.first.bits.chan = chan;
+	cmd_sop_bcr1.header.parts.second.sop.bits.offset = VIN_SOP_BCR1;
+	cmd_sop_bcr1.header.parts.second.sop.bits.length = 1;
+	if (vin_read(ctx, cmd_sop_bcr1.header, &cmd_sop_bcr1, sizeof(struct vin_cmd_sop_bcr1)) < 0) {
+		ctx->error = errno;
+		goto vin_alm_channel_test_set_error;
+	}
+
+	cmd_sop_bcr1.sop_bcr1.test_en = en;
+
+	// Write SOP BCR1 Register
+	cmd_sop_bcr1.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_sop_bcr1.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.cmd = VIN_CMD_SOP;
+	cmd_sop_bcr1.header.parts.first.bits.res = 0;
+	cmd_sop_bcr1.header.parts.first.bits.chan = chan;
+	cmd_sop_bcr1.header.parts.second.sop.bits.offset = VIN_SOP_BCR1;
+	cmd_sop_bcr1.header.parts.second.sop.bits.length = 1;
+	if (vin_write(ctx, &cmd_sop_bcr1, sizeof(struct vin_cmd_sop_bcr1)) < 0) {
+		ctx->error = errno;
+		goto vin_alm_channel_test_set_error;
+	}
+
+	return 0;
+
+vin_alm_channel_test_set_error:
+	return -1;
+}
+
+int vin_alm_channel_dcctl_pram_set(struct vinetic_context *ctx, unsigned int chan, int pram_dcc)
+{
+
+	struct vin_cmd_sop_bcr1 cmd_sop_bcr1;
+
+	// Read SOP BCR1 Register
+	cmd_sop_bcr1.header.parts.first.bits.rw = VIN_READ;
+	cmd_sop_bcr1.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.cmd = VIN_CMD_SOP;
+	cmd_sop_bcr1.header.parts.first.bits.res = 0;
+	cmd_sop_bcr1.header.parts.first.bits.chan = chan;
+	cmd_sop_bcr1.header.parts.second.sop.bits.offset = VIN_SOP_BCR1;
+	cmd_sop_bcr1.header.parts.second.sop.bits.length = 1;
+	if (vin_read(ctx, cmd_sop_bcr1.header, &cmd_sop_bcr1, sizeof(struct vin_cmd_sop_bcr1)) < 0) {
+		ctx->error = errno;
+		goto vin_alm_channel_dcctl_pram_set_error;
+	}
+
+	cmd_sop_bcr1.sop_bcr1.pram_dcc = pram_dcc;
+
+	// Write SOP BCR1 Register
+	cmd_sop_bcr1.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_sop_bcr1.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_sop_bcr1.header.parts.first.bits.cmd = VIN_CMD_SOP;
+	cmd_sop_bcr1.header.parts.first.bits.res = 0;
+	cmd_sop_bcr1.header.parts.first.bits.chan = chan;
+	cmd_sop_bcr1.header.parts.second.sop.bits.offset = VIN_SOP_BCR1;
+	cmd_sop_bcr1.header.parts.second.sop.bits.length = 1;
+	if (vin_write(ctx, &cmd_sop_bcr1, sizeof(struct vin_cmd_sop_bcr1)) < 0) {
+		ctx->error = errno;
+		goto vin_alm_channel_dcctl_pram_set_error;
+	}
+
+	return 0;
+
+vin_alm_channel_dcctl_pram_set_error:
 	return -1;
 }
 
@@ -1262,7 +1434,7 @@ int vin_read_fw_version(struct vinetic_context *ctx)
 		goto vin_read_fw_version_error;
 	}
 
-	memcpy(&ctx->edsp_sw_version_register, &cmd_eop_edsp_sw_version_register.edsp_sw_version_register, sizeof(struct vin_edsp_sw_version_register));
+	memcpy(&ctx->edsp_sw_version_register, &cmd_eop_edsp_sw_version_register.eop_edsp_sw_version_register, sizeof(struct vin_eop_edsp_sw_version_register));
 
 	return 0;
 
