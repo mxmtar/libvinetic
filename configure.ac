@@ -8,6 +8,8 @@ AC_INIT([libvinetic], [0.1.0])
 
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
+AM_PROG_CC_C_O
+
 # generating version string
 if test -f version ; then
 	PACKAGE_VERSION=`cat version`
@@ -55,12 +57,13 @@ AC_SUBST(WORK_DIR)
 
 # Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
+#AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_GREP
 AC_PROG_INSTALL
 AC_PROG_SED
 AC_PROG_LIBTOOL
+
 
 # Checks for libraries.
 

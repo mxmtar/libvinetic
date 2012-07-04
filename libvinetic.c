@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,35 +27,53 @@
 		fflush(stdout); \
 	} while (0)
 
-void vin_init(struct vinetic_context *ctx, char *path)
+void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->dev_path, path, sizeof(ctx->dev_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->dev_path, sizeof(ctx->dev_path), fmt, ap);
+	va_end(ap);
 	ctx->dev_fd = -1;
 }
 
-void vin_set_pram(struct vinetic_context *ctx, char *path)
+void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->pram_path, path, sizeof(ctx->pram_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->pram_path, sizeof(ctx->pram_path), fmt, ap);
+	va_end(ap);
 }
 
-void vin_set_dram(struct vinetic_context *ctx, char *path)
+void vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->dram_path, path, sizeof(ctx->dram_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->dram_path, sizeof(ctx->dram_path), fmt, ap);
+	va_end(ap);
 }
 
-void vin_set_alm_dsp_ab(struct vinetic_context *ctx, char *path)
+void vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->alm_dsp_ab_path, path, sizeof(ctx->alm_dsp_ab_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->alm_dsp_ab_path, sizeof(ctx->alm_dsp_ab_path), fmt, ap);
+	va_end(ap);
 }
 
-void vin_set_alm_dsp_cd(struct vinetic_context *ctx, char *path)
+void vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->alm_dsp_cd_path, path, sizeof(ctx->alm_dsp_cd_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->alm_dsp_cd_path, sizeof(ctx->alm_dsp_cd_path), fmt, ap);
+	va_end(ap);
 }
 
-void vin_set_cram(struct vinetic_context *ctx, char *path)
+void vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...)
 {
-	strncpy(ctx->cram_path, path, sizeof(ctx->cram_path));
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ctx->cram_path, sizeof(ctx->cram_path), fmt, ap);
+	va_end(ap);
 }
 
 int vin_open(struct vinetic_context *ctx)
@@ -484,7 +503,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 	size_t seg_size;
 	size_t seg_chunk_size;
 
-	int fd;
+	int fd = -1;
 	off_t fd_offset;
 	struct stat fd_stat;
 
@@ -899,7 +918,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 	return 0;
 
 vin_download_edsp_firmware_error:
-	close(fd);
+	if (fd > 0) close(fd);
 	return -1;
 }
 
@@ -1405,12 +1424,37 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 		ctx->error = errno;
 		goto vin_coder_channel_jb_statistic_reset_error;
 	}
-
 	return 0;
 
 vin_coder_channel_jb_statistic_reset_error:
 	return -1;
 
+}
+
+int vin_set_endian_mode(struct vinetic_context *ctx, int mode)
+{
+	struct vin_cmd_eop_endian_control cmd_eop_endian_control;
+	// Write Endian Control
+	cmd_eop_endian_control.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_endian_control.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_endian_control.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_endian_control.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_endian_control.header.parts.first.bits.res = 0;
+	cmd_eop_endian_control.header.parts.first.bits.chan = 0;
+	cmd_eop_endian_control.header.parts.second.eop.bits.mod = VIN_MOD_CONT;
+	cmd_eop_endian_control.header.parts.second.eop.bits.ecmd  = VIN_EOP_ENDIAN_CONT;
+	cmd_eop_endian_control.header.parts.second.eop.bits.length = 1;
+	cmd_eop_endian_control.eop_endian_control.res = 0;
+	cmd_eop_endian_control.eop_endian_control.le = mode;
+	if (vin_write(ctx, &cmd_eop_endian_control, sizeof(struct vin_cmd_eop_endian_control)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		goto vin_set_endian_mode_error;
+	}
+	return 0;
+
+vin_set_endian_mode_error:
+	return -1;
 }
 
 int vin_read_fw_version(struct vinetic_context *ctx)

@@ -33,13 +33,12 @@ struct vinetic_context {
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
 };
 
-extern void vin_init(struct vinetic_context *ctx, char *path);
-extern void vin_set_pram(struct vinetic_context *ctx, char *path);
-extern void vin_set_dram(struct vinetic_context *ctx, char *path);
-extern void vin_set_alm_dsp_ab(struct vinetic_context *ctx, char *path);
-extern void vin_set_alm_dsp_cd(struct vinetic_context *ctx, char *path);
-extern void vin_set_cram(struct vinetic_context *ctx, char *path);
-extern void vin_init(struct vinetic_context *ctx, char *path);
+extern void vin_init(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...);
 extern int vin_open(struct vinetic_context *ctx);
 extern void vin_close(struct vinetic_context *ctx);
 extern int vin_reset(struct vinetic_context *ctx);
@@ -59,6 +58,7 @@ extern char *vin_error_str(struct vinetic_context *ctx);
 #define VIN_REV_13 0x2442
 #define VIN_REV_14 0x2484
 extern char *vin_revision_str(struct vinetic_context *ctx);
+
 
 extern int vin_read_fw_version(struct vinetic_context *ctx);
 
@@ -82,6 +82,14 @@ extern int vin_alm_channel_test_set(struct vinetic_context *ctx, unsigned int ch
 extern int vin_alm_channel_dcctl_pram_set(struct vinetic_context *ctx, unsigned int chan, int pram_dcc);
 
 extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
+
+extern int vin_set_endian_mode(struct vinetic_context *ctx, int mode);
+
+#define vin_set_little_endian_mode(_ctx) \
+	({ \
+		int res = vin_set_endian_mode(_ctx, VIN_LITTLE_ENDIAN); \
+		res; \
+	})
 
 #define VIN_GAINDB_MIN -24.08
 #define VIN_GAINDB_MAX 23.95
