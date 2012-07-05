@@ -25,10 +25,17 @@ struct vinetic_context {
 
 	char cram_path[PATH_MAX];
 
+	char *dev_name;
+
 	int error;
 	int errorline;
 
 	u_int16_t revision;
+
+	// status
+	struct vin_status_registers status;
+	struct vin_status_registers status_old;
+	struct vin_status_registers status_mask;
 
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
 };
@@ -47,12 +54,17 @@ extern int vin_flush_mbox(struct vinetic_context *ctx);
 extern int vin_is_not_ready(struct vinetic_context *ctx);
 extern u_int16_t vin_read_dia(struct vinetic_context *ctx);
 
+extern int vin_reset_status(struct vinetic_context *ctx);
+extern ssize_t vin_get_status(struct vinetic_context *ctx);
+
 extern int vin_resync(struct vinetic_context *ctx);
 extern int vin_cerr_acknowledge(struct vinetic_context *ctx);
 
 extern int vin_poll_set(struct vinetic_context *ctx, int poll);
 
-extern char *vin_dev_name(struct vinetic_context *ctx);
+extern char *vin_get_dev_name(struct vinetic_context *ctx);
+extern void vin_set_dev_name(struct vinetic_context *ctx, char *name);
+
 extern char *vin_error_str(struct vinetic_context *ctx);
 
 #define VIN_REV_13 0x2442
@@ -84,6 +96,18 @@ extern int vin_alm_channel_dcctl_pram_set(struct vinetic_context *ctx, unsigned 
 extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 
 extern int vin_set_endian_mode(struct vinetic_context *ctx, int mode);
+
+#define vin_poll_enable(_ctx) \
+	({ \
+		int res = vin_poll_set(_ctx, 1); \
+		res; \
+	})
+
+#define vin_poll_disable(_ctx) \
+	({ \
+		int res = vin_poll_set(_ctx, 0); \
+		res; \
+	})
 
 #define vin_set_little_endian_mode(_ctx) \
 	({ \

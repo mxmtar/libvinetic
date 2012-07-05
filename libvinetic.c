@@ -34,6 +34,8 @@ void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 	vsnprintf(ctx->dev_path, sizeof(ctx->dev_path), fmt, ap);
 	va_end(ap);
 	ctx->dev_fd = -1;
+
+	ctx->dev_name = NULL;
 }
 
 void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
@@ -181,9 +183,20 @@ int vin_poll_set(struct vinetic_context *ctx, int poll)
 	return rc;
 }
 
-char *vin_dev_name(struct vinetic_context *ctx)
+char *vin_get_dev_name(struct vinetic_context *ctx)
 {
-	return basename(ctx->dev_path);
+	if (ctx->dev_name && strlen(ctx->dev_name))
+		return ctx->dev_name;
+	else
+		return "unknown";
+}
+
+void vin_set_dev_name(struct vinetic_context *ctx, char *name)
+{
+	if (name && strlen(name))
+		ctx->dev_name = name;
+	else
+		ctx->dev_name = "unknown";
 }
 
 char *vin_error_str(struct vinetic_context *ctx)
@@ -375,6 +388,38 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 	}
 
 vin_read_end:
+	return rc;
+}
+
+int vin_reset_status(struct vinetic_context *ctx)
+{
+	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_STATUS, NULL);
+	ctx->error = errno;
+	return rc;
+}
+
+
+ssize_t vin_get_status(struct vinetic_context *ctx)
+{
+	ssize_t rc;
+	off64_t lsrc;
+
+	memcpy(&ctx->status_old, &ctx->status, sizeof(struct vin_status_registers));
+
+	// read command
+	if ((lsrc = lseek64(ctx->dev_fd, 0xffffffff, SEEK_SET)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = (ssize_t)lsrc;
+		goto vin_get_status_end;
+	}
+	if ((rc = read(ctx->dev_fd, &ctx->status, sizeof(struct vin_status_registers))) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		goto vin_get_status_end;
+	}
+
+vin_get_status_end:
 	return rc;
 }
 
