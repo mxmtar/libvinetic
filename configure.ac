@@ -9,6 +9,7 @@ AC_INIT([libvinetic], [0.1.0])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AM_PROG_CC_C_O
+AM_PROG_AR
 
 # generating version string
 if test -f version ; then

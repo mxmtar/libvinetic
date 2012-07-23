@@ -27,8 +27,76 @@
 		fflush(stdout); \
 	} while (0)
 
+static const struct vin_eop_coder_channel_configuration_rtp_support default_eop_coder_channel_configuration_rtp_support = {
+	.ssrc_hw = 0x0000, // 1
+	.ssrc_lw = 0x0000, // 2
+	.seq_nr = 0x0000, // 3
+	.pt_00011 = 0x00, // 4 - 8880
+	.sid_00011 = 1,
+	.pt_00010 = 0x08,
+	.sid_00010 = 1,
+	.pt_00101 = 0x71, // 5 - F0F1
+	.sid_00101 = 1,
+	.pt_00100 = 0x70,
+	.sid_00100 = 1,
+	.pt_00111 = 0x72, // 6 - 82F2
+	.sid_00111 = 1,
+	.pt_00110 = 0x02,
+	.sid_00110 = 1,
+	.pt_01001 = 0x7F, // 7 - FFFF
+	.sid_01001 = 1,
+	.pt_01000 = 0x7F,
+	.sid_01000 = 1,
+	.pt_01011 = 0x7F, // 8 - FFFF
+	.sid_01011 = 1,
+	.pt_01010 = 0x7F,
+	.sid_01010 = 1,
+	.pt_01101 = 0x7F, // 9 - FFFF
+	.sid_01101 = 1,
+	.pt_01100 = 0x7F,
+	.sid_01100 = 1,
+	.pt_01111 = 0x7F, // 10 - FFFF
+	.sid_01111 = 1,
+	.pt_01110 = 0x7F,
+	.sid_01110 = 1,
+	.pt_10001 = 0x7F, // 11 - FFFF
+	.sid_10001 = 1,
+	.pt_10000 = 0x7F,
+	.sid_10000 = 1,
+	.pt_10011 = 0x60, // 12 - 1260
+	.sid_10011 = 0,
+	.pt_10010 = 0x12,
+	.sid_10010= 0,
+	.pt_10101 = 0x7F, // 13 - FFFF
+	.sid_10101 = 1,
+	.pt_10100 = 0x7F,
+	.sid_10100 = 1,
+	.pt_10111 = 0x7F, // 14 - FFFF
+	.sid_10111 = 1,
+	.pt_10110 = 0x7F,
+	.sid_10110 = 1,
+	.pt_11001 = 0x7F, // 15 - FFFF
+	.sid_11001 = 1,
+	.pt_11000 = 0x7F,
+	.sid_11000 = 1,
+	.pt_11011 = 0x7F, // 16 - FFFF
+	.sid_11011 = 1,
+	.pt_11010 = 0x7F,
+	.sid_11010 = 1,
+	.pt_11101 = 0x04, // 17 - 0404
+	.sid_11101 = 0,
+	.pt_11100 = 0x04,
+	.sid_11100 = 0,
+	.pt_11111 = 0x5C, // 18 - FF5C
+	.sid_11111 = 0,
+	.pt_11110 = 0x7F,
+	.sid_11110 = 1,
+};
+
 void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	size_t i;
+
 	va_list ap;
 	va_start(ap, fmt);
 	vsnprintf(ctx->dev_path, sizeof(ctx->dev_path), fmt, ap);
@@ -36,6 +104,12 @@ void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 	ctx->dev_fd = -1;
 
 	ctx->dev_name = NULL;
+
+	for (i=0; i<4; i++) {
+		memcpy(&ctx->eop_coder_channel_configuration_rtp_support[i],
+				&default_eop_coder_channel_configuration_rtp_support,
+				sizeof(struct vin_eop_coder_channel_configuration_rtp_support));
+	}
 }
 
 void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
@@ -214,6 +288,13 @@ char *vin_revision_str(struct vinetic_context *ctx)
 	}
 }
 
+int vin_reset_status(struct vinetic_context *ctx)
+{
+	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_STATUS, NULL);
+	ctx->error = errno;
+	return rc;
+}
+
 ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 {
 	ssize_t rc;
@@ -238,7 +319,15 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		memcpy(&cmd.full, data, 4);
 		length = count - 4;
 	}
-
+#if 0
+	// reset status
+	if (vin_reset_status(ctx) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = -1;
+		goto vin_write_end;
+	}
+#endif
 	// check mailbox status
 	auxcmd.full = 0;
 	auxcmd.parts.first.full = VIN_rBXSR;
@@ -307,14 +396,14 @@ ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count)
 		goto vin_write_end;
 	}
 	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
-		PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
-		PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
-		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
+// 		PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
+// 		PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
+// 		PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 	}
 	if (bxsr.bxsr1.bits.cerr) {
 		ctx->errorline = __LINE__ - 1;
-		ctx->error = errno = EIO;
-		PRINTF("cerr=%u\n", bxsr.bxsr1.bits.cerr);
+		ctx->error = errno = ENOMSG;
+// 		PRINTF("cerr=%u\n", bxsr.bxsr1.bits.cerr);
 #if 0
 		if (vin_cerr_acknowledge(ctx) < 0) {
 			ctx->errorline = __LINE__ - 1;
@@ -336,7 +425,15 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 	off64_t lsrc;
 	union vin_cmd auxcmd;
 	struct vin_read_bxsr bxsr;
-
+#if 0
+	// reset status
+	if (vin_reset_status(ctx) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+		rc = -1;
+		goto vin_read_end;
+	}
+#endif
 	// check mailbox status
 	auxcmd.full = 0;
 	auxcmd.parts.first.full = VIN_rBXSR;
@@ -390,14 +487,6 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 vin_read_end:
 	return rc;
 }
-
-int vin_reset_status(struct vinetic_context *ctx)
-{
-	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_STATUS, NULL);
-	ctx->error = errno;
-	return rc;
-}
-
 
 ssize_t vin_get_status(struct vinetic_context *ctx)
 {
@@ -563,7 +652,6 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_download_edsp_firmware_error;
-
 	}
 	// Maximazing Command In-Box
 	cmd_short.full = VIN_wMAXCBX;
@@ -739,7 +827,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 			goto vin_download_edsp_firmware_error;
 		}
 	}
-	PRINTF("\npram: checksum=0x%04x\n", cmd_eop_crc_pram.crc);
+// 	PRINTF("\npram: checksum=0x%04x\n", cmd_eop_crc_pram.crc);
 #endif
 	close(fd);
 
@@ -907,7 +995,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 			goto vin_download_edsp_firmware_error;
 		}
 	}
-	PRINTF("\ndram: checksum=0x%04x\n", cmd_eop_crc_dram.crc);
+// 	PRINTF("\ndram: checksum=0x%04x\n", cmd_eop_crc_dram.crc);
 #endif
 	close(fd);
 
@@ -1189,7 +1277,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		cmd_eop_access_fpi_memory.header.parts.first.bits.res = 0;
 		cmd_eop_access_fpi_memory.header.parts.first.bits.chan = 0;
 		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.mod = VIN_MOD_TEST;
-		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.ecmd  = VIN_EOP_ACCESS_DRAM;
+		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.ecmd  = VIN_EOP_ACCESS_FPI;
 		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.length = data_chunk_size;
 		if ((res = vin_write(ctx, &cmd_eop_access_fpi_memory, sizeof(union vin_cmd) + data_chunk_size*2)) < 0) {
 			ctx->errorline = __LINE__ - 1;
@@ -1230,7 +1318,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
 	}
-	PRINTF("crc=0x%04x\n", cmd_eop_crc_fpi.crc);
+// 	PRINTF("crc=0x%04x\n", cmd_eop_crc_fpi.crc);
 #endif
 #if 0
 	// DSCHKR
@@ -1247,7 +1335,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		ctx->error = errno;
 		goto vin_download_alm_dsp_error;
 	}
-	PRINTF("crc=0x%04x\n", cmd_sop_dschkr.ds_check);
+// 	PRINTF("crc=0x%04x\n", cmd_sop_dschkr.ds_check);
 #endif
 
 	free(data);
@@ -1283,7 +1371,6 @@ int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan)
 	cmd_sop_ccr.sop_ccr.jump_dc = 0;
 	cmd_sop_ccr.sop_ccr.res0 = 0;
 	if ((res = vin_write(ctx, &cmd_sop_ccr, sizeof(struct vin_cmd_sop_ccr))) < 0) {
-		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_jump_alm_dsp_error;
 	}
@@ -1451,6 +1538,176 @@ vin_alm_channel_dcctl_pram_set_error:
 	return -1;
 }
 
+int vin_set_opmode(struct vinetic_context *ctx, unsigned int ch, unsigned int mode)
+{
+	union vin_cmd_short cmd;
+
+	cmd.bits.rw = VIN_WRITE;
+	cmd.bits.sc = 1;
+	cmd.bits.bc = 0;
+	cmd.bits.om = 1;
+	cmd.bits.cmd = (mode >> 4) & 0xf;
+	cmd.bits.subcmd = mode & 0xf;
+	cmd.bits.chan = ch;
+
+	if (vin_write(ctx, &cmd, sizeof(union vin_cmd_short)) < 0) {
+		ctx->error = errno;
+		goto vin_set_opmode_error;
+	}
+	return 0;
+
+vin_set_opmode_error:
+	return -1;
+}
+
+int vin_ali_control(struct vinetic_context *ctx)
+{
+	struct vin_cmd_eop_ali_control cmd_eop_ali_control;
+
+	cmd_eop_ali_control.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_ali_control.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_ali_control.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_ali_control.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_ali_control.header.parts.first.bits.res = 0;
+	cmd_eop_ali_control.header.parts.first.bits.chan = 0;
+	cmd_eop_ali_control.header.parts.second.eop.bits.mod = VIN_MOD_ALI;
+	cmd_eop_ali_control.header.parts.second.eop.bits.ecmd  = VIN_EOP_ALI_CONT;
+	cmd_eop_ali_control.header.parts.second.eop.bits.length = sizeof(struct vin_eop_ali_control)/2;
+	memcpy(&cmd_eop_ali_control.eop_ali_control, &ctx->eop_ali_control, sizeof(struct vin_eop_ali_control));
+	if (vin_write(ctx, &cmd_eop_ali_control, sizeof(struct vin_cmd_eop_ali_control)) < 0) {
+		ctx->error = errno;
+		goto vin_ali_control_error;
+	}
+	return 0;
+
+vin_ali_control_error:
+	return -1;
+}
+
+int vin_ali_channel(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_ali_channel cmd_eop_ali_channel;
+
+	cmd_eop_ali_channel.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_ali_channel.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_ali_channel.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_ali_channel.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_ali_channel.header.parts.first.bits.res = 0;
+	cmd_eop_ali_channel.header.parts.first.bits.chan = ch;
+	cmd_eop_ali_channel.header.parts.second.eop.bits.mod = VIN_MOD_ALI;
+	cmd_eop_ali_channel.header.parts.second.eop.bits.ecmd  = VIN_EOP_ALI_CHAN;
+	cmd_eop_ali_channel.header.parts.second.eop.bits.length = sizeof(struct vin_eop_ali_channel)/2;
+	memcpy(&cmd_eop_ali_channel.eop_ali_channel, &ctx->eop_ali_channel[ch], sizeof(struct vin_eop_ali_channel));
+	if (vin_write(ctx, &cmd_eop_ali_channel, sizeof(struct vin_cmd_eop_ali_channel)) < 0) {
+		ctx->error = errno;
+		goto vin_ali_error;
+	}
+	return 0;
+
+vin_ali_error:
+	return -1;
+}
+
+int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_ali_near_end_lec cmd_eop_ali_near_end_lec;
+
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.res = 0;
+	cmd_eop_ali_near_end_lec.header.parts.first.bits.chan = ch;
+	cmd_eop_ali_near_end_lec.header.parts.second.eop.bits.mod = VIN_MOD_ALI;
+	cmd_eop_ali_near_end_lec.header.parts.second.eop.bits.ecmd  = VIN_EOP_ALI_NEAR_END_LEC;
+	cmd_eop_ali_near_end_lec.header.parts.second.eop.bits.length = sizeof(struct vin_eop_ali_near_end_lec)/2;
+	memcpy(&cmd_eop_ali_near_end_lec.eop_ali_near_end_lec, &ctx->eop_ali_near_end_lec[ch], sizeof(struct vin_eop_ali_near_end_lec));
+	if (vin_write(ctx, &cmd_eop_ali_near_end_lec, sizeof(struct vin_cmd_eop_ali_near_end_lec)) < 0) {
+		ctx->error = errno;
+		goto vin_ali_near_end_lec_error;
+	}
+	return 0;
+
+vin_ali_near_end_lec_error:
+	return -1;
+}
+
+int vin_coder_control(struct vinetic_context *ctx)
+{
+	struct vin_cmd_eop_coder_control cmd_eop_coder_control;
+
+	cmd_eop_coder_control.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_coder_control.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_coder_control.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_coder_control.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_coder_control.header.parts.first.bits.res = 0;
+	cmd_eop_coder_control.header.parts.first.bits.chan = 0;
+	cmd_eop_coder_control.header.parts.second.eop.bits.mod = VIN_MOD_CODER;
+	cmd_eop_coder_control.header.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_CONT;
+	cmd_eop_coder_control.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_control)/2;
+	memcpy(&cmd_eop_coder_control.eop_coder_control, &ctx->eop_coder_control, sizeof(struct vin_eop_coder_control));
+	if (vin_write(ctx, &cmd_eop_coder_control, sizeof(struct vin_cmd_eop_coder_control)) < 0) {
+		ctx->error = errno;
+		goto vin_coder_control_error;
+	}
+	return 0;
+
+vin_coder_control_error:
+	return -1;
+}
+
+int vin_coder_channel_speech_compression(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_coder_channel_speech_compression cmd_eop_coder_channel_speech_compression;
+
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.res = 0;
+	cmd_eop_coder_channel_speech_compression.header.parts.first.bits.chan = ch;
+	cmd_eop_coder_channel_speech_compression.header.parts.second.eop.bits.mod = VIN_MOD_CODER;
+	cmd_eop_coder_channel_speech_compression.header.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_CHAN_SC;
+	cmd_eop_coder_channel_speech_compression.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_channel_speech_compression)/2;
+	memcpy(&cmd_eop_coder_channel_speech_compression.eop_coder_channel_speech_compression,
+			&ctx->eop_coder_channel_speech_compression[ch],
+			sizeof(struct vin_eop_coder_channel_speech_compression));
+	if (vin_write(ctx, &cmd_eop_coder_channel_speech_compression, sizeof(struct vin_cmd_eop_coder_channel_speech_compression)) < 0) {
+		ctx->error = errno;
+		goto vin_coder_channel_speech_compression_error;
+	}
+	return 0;
+
+vin_coder_channel_speech_compression_error:
+	return -1;
+}
+
+int vin_coder_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_coder_channel_configuration_rtp_support cmd_eop_coder_channel_configuration_rtp_support;
+
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.res = 0;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.first.bits.chan = ch;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.second.eop.bits.mod = VIN_MOD_CODER;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_CONF_RTP;
+	cmd_eop_coder_channel_configuration_rtp_support.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_channel_configuration_rtp_support)/2;
+	memcpy(&cmd_eop_coder_channel_configuration_rtp_support.eop_coder_channel_configuration_rtp_support,
+			&ctx->eop_coder_channel_configuration_rtp_support[ch],
+			sizeof(struct vin_eop_coder_channel_configuration_rtp_support));
+	if (vin_write(ctx, &cmd_eop_coder_channel_configuration_rtp_support, sizeof(struct vin_cmd_eop_coder_channel_configuration_rtp_support)) < 0) {
+		ctx->error = errno;
+		goto vin_coder_channel_configuration_rtp_support_error;
+	}
+	return 0;
+
+vin_coder_channel_configuration_rtp_support_error:
+	return -1;
+}
+
 int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan)
 {
 	union vin_cmd cmd;
@@ -1465,7 +1722,6 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	cmd.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_JBSTAT;
 	cmd.parts.second.eop.bits.length = 0;
 	if (vin_write(ctx, &cmd, sizeof(union vin_cmd)) < 0) {
-		ctx->errorline = __LINE__ - 1;
 		ctx->error = errno;
 		goto vin_coder_channel_jb_statistic_reset_error;
 	}
@@ -1473,7 +1729,6 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 
 vin_coder_channel_jb_statistic_reset_error:
 	return -1;
-
 }
 
 int vin_set_endian_mode(struct vinetic_context *ctx, int mode)
