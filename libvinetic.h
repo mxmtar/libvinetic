@@ -84,7 +84,7 @@ extern char *vin_revision_str(struct vinetic_context *ctx);
 
 extern int vin_read_fw_version(struct vinetic_context *ctx);
 
-extern ssize_t vin_write(struct vinetic_context *ctx, const void *buf, size_t count);
+extern ssize_t vin_write(struct vinetic_context *ctx, int track_err, const void *buf, size_t count);
 
 extern ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size_t count);
 
@@ -100,10 +100,6 @@ extern int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan);
 extern int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path);
 
 extern int vin_write_sop_generic(struct vinetic_context *ctx, unsigned int chan, u_int16_t offset, u_int16_t data);
-extern int vin_alm_channel_test_set(struct vinetic_context *ctx, unsigned int chan, int en);
-extern int vin_alm_channel_dcctl_pram_set(struct vinetic_context *ctx, unsigned int chan, int pram_dcc);
-
-extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 
 extern int vin_set_endian_mode(struct vinetic_context *ctx, int mode);
 
@@ -159,7 +155,7 @@ extern int vin_ali_control(struct vinetic_context *ctx);
 		int __res = 0; \
 		for (__i=0; __i<4; __i++) \
 		{ \
-			if (_ctx.eop_ali_channel[i].en == VIN_EN) { \
+			if (_ctx.eop_ali_channel[__i].en == VIN_EN) { \
 				__res = 1; \
 				break; \
 			} \
@@ -301,7 +297,7 @@ extern int vin_coder_control(struct vinetic_context *ctx);
 		int __res = 0; \
 		for (__i=0; __i<4; __i++) \
 		{ \
-			if (_ctx.eop_coder_channel_speech_compression[i].en == VIN_EN) { \
+			if (_ctx.eop_coder_channel_speech_compression[__i].en == VIN_EN) { \
 				__res = 1; \
 				break; \
 			} \
@@ -433,6 +429,8 @@ extern int vin_coder_channel_configuration_rtp_support(struct vinetic_context *c
 	do { \
 		_ctx.eop_coder_channel_configuration_rtp_support[_ch].seq_nr = htons(_seq_nr); \
 	} while (0)
+
+extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 
 #define VIN_GAINDB_MIN -24.08
 #define VIN_GAINDB_MAX 23.95
