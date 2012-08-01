@@ -1501,11 +1501,11 @@ int vin_ali_channel(struct vinetic_context *ctx, unsigned int ch)
 	memcpy(&cmd_eop_ali_channel.eop_ali_channel, &ctx->eop_ali_channel[ch], sizeof(struct vin_eop_ali_channel));
 	if (vin_write(ctx, 1, &cmd_eop_ali_channel, sizeof(struct vin_cmd_eop_ali_channel)) < 0) {
 		ctx->error = errno;
-		goto vin_ali_error;
+		goto vin_ali_channel_error;
 	}
 	return 0;
 
-vin_ali_error:
+vin_ali_channel_error:
 	return -1;
 }
 
@@ -1530,6 +1530,104 @@ int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch)
 	return 0;
 
 vin_ali_near_end_lec_error:
+	return -1;
+}
+
+int vin_signaling_control(struct vinetic_context *ctx)
+{
+	struct vin_cmd_eop_signaling_control cmd_eop_signaling_control;
+
+	cmd_eop_signaling_control.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_signaling_control.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_signaling_control.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_signaling_control.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_signaling_control.header.parts.first.bits.res = 0;
+	cmd_eop_signaling_control.header.parts.first.bits.chan = 0;
+	cmd_eop_signaling_control.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_signaling_control.header.parts.second.eop.bits.ecmd  = VIN_EOP_SIG_CONT;
+	cmd_eop_signaling_control.header.parts.second.eop.bits.length = sizeof(struct vin_eop_signaling_control)/2;
+	memcpy(&cmd_eop_signaling_control.eop_signaling_control, &ctx->eop_signaling_control, sizeof(struct vin_eop_signaling_control));
+	if (vin_write(ctx, 1, &cmd_eop_signaling_control, sizeof(struct vin_cmd_eop_signaling_control)) < 0) {
+		ctx->error = errno;
+		goto vin_signaling_control_error;
+	}
+	return 0;
+
+vin_signaling_control_error:
+	return -1;
+}
+
+int vin_signaling_channel(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_signaling_channel cmd_eop_signaling_channel;
+
+	cmd_eop_signaling_channel.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_signaling_channel.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_signaling_channel.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_signaling_channel.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_signaling_channel.header.parts.first.bits.res = 0;
+	cmd_eop_signaling_channel.header.parts.first.bits.chan = ch;
+	cmd_eop_signaling_channel.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_signaling_channel.header.parts.second.eop.bits.ecmd  = VIN_EOP_SIG_CHAN;
+	cmd_eop_signaling_channel.header.parts.second.eop.bits.length = sizeof(struct vin_eop_signaling_channel)/2;
+	memcpy(&cmd_eop_signaling_channel.eop_signaling_channel, &ctx->eop_signaling_channel[ch], sizeof(struct vin_eop_signaling_channel));
+	if (vin_write(ctx, 1, &cmd_eop_signaling_channel, sizeof(struct vin_cmd_eop_signaling_channel)) < 0) {
+		ctx->error = errno;
+		goto vin_signaling_channel_error;
+	}
+	return 0;
+
+vin_signaling_channel_error:
+	return -1;
+}
+
+int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_dtmf_receiver cmd_eop_dtmf_receiver;
+
+	cmd_eop_dtmf_receiver.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.res = 0;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.chan = ch;
+	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.ecmd  = VIN_EOP_DTMFREC;
+	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.length = sizeof(struct vin_eop_dtmf_receiver)/2;
+	memcpy(&cmd_eop_dtmf_receiver.eop_dtmf_receiver, &ctx->eop_dtmf_receiver[ch], sizeof(struct vin_eop_dtmf_receiver));
+	if (vin_write(ctx, 1, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
+		ctx->error = errno;
+		goto vin_dtmf_receiver_error;
+	}
+	return 0;
+
+vin_dtmf_receiver_error:
+	return -1;
+}
+
+int vin_signaling_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_signaling_channel_configuration_rtp_support cmd_eop_signaling_channel_configuration_rtp_support;
+
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.res = 0;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.first.bits.chan = ch;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.second.eop.bits.ecmd  = VIN_EOP_SIG_CONF_RTP;
+	cmd_eop_signaling_channel_configuration_rtp_support.header.parts.second.eop.bits.length = sizeof(struct vin_eop_signaling_channel_configuration_rtp_support)/2;
+	memcpy(&cmd_eop_signaling_channel_configuration_rtp_support.eop_signaling_channel_configuration_rtp_support,
+			&ctx->eop_signaling_channel_configuration_rtp_support[ch],
+			sizeof(struct vin_eop_signaling_channel_configuration_rtp_support));
+	if (vin_write(ctx, 1, &cmd_eop_signaling_channel_configuration_rtp_support, sizeof(struct vin_cmd_eop_signaling_channel_configuration_rtp_support)) < 0) {
+		ctx->error = errno;
+		goto vin_signaling_channel_configuration_rtp_support_error;
+	}
+	return 0;
+
+vin_signaling_channel_configuration_rtp_support_error:
 	return -1;
 }
 

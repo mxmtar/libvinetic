@@ -47,6 +47,11 @@ struct vinetic_context {
 	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
 	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
 
+	struct vin_eop_signaling_control eop_signaling_control;
+	struct vin_eop_signaling_channel eop_signaling_channel[4];
+	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
+	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
+
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
 };
 
@@ -213,6 +218,34 @@ extern int vin_ali_channel(struct vinetic_context *ctx, unsigned int ch);
 			_ctx.eop_ali_channel[_ch].i1 = VIN_SIG_COD_OUT00 + _cod; \
 	} while (0)
 
+#define vin_ali_channel_set_input_sig_a(_ctx, _ch, _inp, _sig_a) \
+	do { \
+		if (_inp == 5) \
+			_ctx.eop_ali_channel[_ch].i5 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 4) \
+			_ctx.eop_ali_channel[_ch].i4 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 3) \
+			_ctx.eop_ali_channel[_ch].i3 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 2) \
+			_ctx.eop_ali_channel[_ch].i2 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else \
+			_ctx.eop_ali_channel[_ch].i1 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+	} while (0)
+
+#define vin_ali_channel_set_input_sig_b(_ctx, _ch, _inp, _sig_b) \
+	do { \
+		if (_inp == 5) \
+			_ctx.eop_ali_channel[_ch].i5 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 4) \
+			_ctx.eop_ali_channel[_ch].i4 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 3) \
+			_ctx.eop_ali_channel[_ch].i3 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 2) \
+			_ctx.eop_ali_channel[_ch].i2 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else \
+			_ctx.eop_ali_channel[_ch].i1 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+	} while (0)
+
 extern int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch);
 
 #define vin_ali_near_end_lec_enable(_ctx, _ch) \
@@ -263,6 +296,149 @@ extern int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch);
 #define vin_ali_near_end_lec_set_nlpm(_ctx, _ch, _nlpm) \
 	do { \
 		_ctx.eop_ali_near_end_lec[_ch].nlpm = _nlpm; \
+	} while (0)
+
+extern int vin_signaling_control(struct vinetic_context *ctx);
+
+#define vin_signaling_enable(_ctx) \
+	({ \
+		_ctx.eop_signaling_control.en = VIN_EN; \
+		int __res = vin_signaling_control(&_ctx); \
+		if (__res < 0) _ctx.eop_signaling_control.en = VIN_DIS; \
+		__res; \
+	})
+
+#define vin_signaling_disable(_ctx) \
+	({ \
+		_ctx.eop_signaling_control.en = VIN_DIS; \
+		int __res = vin_signaling_control(&_ctx); \
+		if (__res < 0) _ctx.eop_signaling_control.en = VIN_EN; \
+		__res; \
+	})
+
+#define is_vin_signaling_enabled(_ctx) \
+	({ \
+		int __res = 0; \
+		if (_ctx.eop_signaling_control.en == VIN_EN) \
+			__res = 1; \
+		__res; \
+	})
+
+#define is_vin_signaling_used(_ctx) \
+	({ \
+		size_t __i; \
+		int __res = 0; \
+		for (__i=0; __i<4; __i++) \
+		{ \
+			if (_ctx.eop_signaling_channel[__i].en == VIN_EN) { \
+				__res = 1; \
+				break; \
+			} \
+		} \
+		__res; \
+	})
+
+extern int vin_signaling_channel(struct vinetic_context *ctx, unsigned int ch);
+
+#define vin_signaling_channel_enable(_ctx, _ch) \
+	({ \
+		_ctx.eop_signaling_channel[_ch].en = VIN_EN; \
+		int __res = vin_signaling_channel(&_ctx, _ch); \
+		if (__res < 0) _ctx.eop_signaling_channel[_ch].en = VIN_DIS; \
+		__res; \
+	})
+
+#define vin_signaling_channel_disable(_ctx, _ch) \
+	({ \
+		_ctx.eop_signaling_channel[_ch].en = VIN_DIS; \
+		int __res = vin_signaling_channel(&_ctx, _ch); \
+		if (__res < 0) _ctx.eop_signaling_channel[_ch].en = VIN_EN; \
+		__res; \
+	})
+
+#define is_vin_signaling_channel_enabled(_ctx, _ch) \
+	({ \
+		int __res = 0; \
+		if (_ctx.eop_signaling_channel[_ch].en == VIN_EN) \
+			__res = 1; \
+		__res; \
+	})
+
+#define vin_signaling_channel_set_input_ali(_ctx, _ch, _inp, _ali) \
+	do { \
+		if (_inp == 2) \
+			_ctx.eop_signaling_channel[_ch].i2 = VIN_SIG_ALM_OUT00 + _ali; \
+		else \
+			_ctx.eop_signaling_channel[_ch].i1 = VIN_SIG_ALM_OUT00 + _ali; \
+	} while (0)
+
+#define vin_signaling_channel_set_input_coder(_ctx, _ch, _inp, _ali) \
+	do { \
+		if (_inp == 2) \
+			_ctx.eop_signaling_channel[_ch].i2 = VIN_SIG_COD_OUT00 + _ali; \
+		else \
+			_ctx.eop_signaling_channel[_ch].i1 = VIN_SIG_COD_OUT00 + _ali; \
+	} while (0)
+
+extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
+
+#define vin_dtmf_receiver_enable(_ctx, _ch) \
+	({ \
+		_ctx.eop_dtmf_receiver[_ch].en = VIN_EN; \
+		_ctx.eop_dtmf_receiver[_ch].dtrnr = _ch; \
+		int __res = vin_dtmf_receiver(&_ctx, _ch); \
+		if (__res < 0) _ctx.eop_dtmf_receiver[_ch].en = VIN_DIS; \
+		__res; \
+	})
+
+#define vin_dtmf_receiver_disable(_ctx, _ch) \
+	({ \
+		_ctx.eop_dtmf_receiver[_ch].en = VIN_DIS; \
+		int __res = vin_dtmf_receiver(&_ctx, _ch); \
+		if (__res < 0) _ctx.eop_dtmf_receiver[_ch].en = VIN_EN; \
+		__res; \
+	})
+
+#define is_vin_dtmf_receiver_enabled(_ctx, _ch) \
+	({ \
+		int __res = 0; \
+		if (_ctx.eop_dtmf_receiver[_ch].en == VIN_EN) \
+			__res = 1; \
+		__res; \
+	})
+
+#define vin_coder_channel_set_as(_ctx, _ch, _as) \
+	do { \
+		_ctx.eop_dtmf_receiver[_ch].as = _as; \
+	} while (0)
+
+#define vin_coder_channel_set_is(_ctx, _ch, _is) \
+	do { \
+		_ctx.eop_dtmf_receiver[_ch].is = _is; \
+	} while (0)
+
+#define vin_coder_channel_set_et(_ctx, _ch, _et) \
+	do { \
+		_ctx.eop_dtmf_receiver[_ch].et = _et; \
+	} while (0)
+
+extern int vin_signaling_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch);
+
+#define vin_signaling_channel_config_rtp(_ctx, _ch) \
+	({ \
+		int __res = vin_signaling_channel_configuration_rtp_support(&_ctx, _ch); \
+		__res; \
+	})
+
+#define vin_signaling_channel_config_rtp_set_ssrc(_ctx, _ch, _ssrc) \
+	do { \
+		_ctx.eop_signaling_channel_configuration_rtp_support[_ch].ssrc_hw = htons(_ssrc >> 16); \
+		_ctx.eop_signaling_channel_configuration_rtp_support[_ch].ssrc_lw = htons(_ssrc); \
+	} while (0)
+
+#define vin_signaling_channel_config_rtp_set_evt_pt(_ctx, _ch, _evt_pt) \
+	do { \
+		_ctx.eop_signaling_channel_configuration_rtp_support[_ch].evt_pt = _evt_pt; \
 	} while (0)
 
 extern int vin_coder_control(struct vinetic_context *ctx);
@@ -409,6 +585,34 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 			_ctx.eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_ALM_OUT00 + _ali; \
 		else \
 			_ctx.eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_ALM_OUT00 + _ali; \
+	} while (0)
+
+#define vin_coder_channel_set_input_sig_a(_ctx, _ch, _inp, _sig_a) \
+	do { \
+		if (_inp == 5) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i5 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 4) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i4 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 3) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i3 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else if (_inp == 2) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		else \
+			_ctx.eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+	} while (0)
+
+#define vin_coder_channel_set_input_sig_b(_ctx, _ch, _inp, _sig_b) \
+	do { \
+		if (_inp == 5) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i5 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 4) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i4 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 3) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i3 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else if (_inp == 2) \
+			_ctx.eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		else \
+			_ctx.eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
 	} while (0)
 
 extern int vin_coder_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch);
