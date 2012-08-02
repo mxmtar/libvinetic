@@ -50,6 +50,7 @@ struct vinetic_context {
 	struct vin_eop_signaling_control eop_signaling_control;
 	struct vin_eop_signaling_channel eop_signaling_channel[4];
 	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
+	struct vin_eop_coder_configuration_rtp_support eop_coder_configuration_rtp_support;
 	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
 
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
@@ -613,6 +614,20 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 			_ctx.eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
 		else \
 			_ctx.eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+	} while (0)
+
+extern int vin_coder_configuration_rtp_support(struct vinetic_context *ctx);
+
+#define vin_coder_config_rtp(_ctx) \
+	({ \
+		int __res = vin_coder_configuration_rtp_support(&_ctx); \
+		__res; \
+	})
+
+#define vin_coder_config_rtp_set_timestamp(_ctx, _timestamp) \
+	do { \
+		_ctx.eop_coder_configuration_rtp_support.time_stamp_hw = htons(_timestamp >> 16); \
+		_ctx.eop_coder_configuration_rtp_support.time_stamp_lw = htons(_timestamp); \
 	} while (0)
 
 extern int vin_coder_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch);

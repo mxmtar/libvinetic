@@ -1681,6 +1681,32 @@ vin_coder_channel_speech_compression_error:
 	return -1;
 }
 
+int vin_coder_configuration_rtp_support(struct vinetic_context *ctx)
+{
+	struct vin_cmd_eop_coder_configuration_rtp_support cmd_eop_coder_configuration_rtp_support;
+
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.res = 0;
+	cmd_eop_coder_configuration_rtp_support.header.parts.first.bits.chan = 0;
+	cmd_eop_coder_configuration_rtp_support.header.parts.second.eop.bits.mod = VIN_MOD_CODER;
+	cmd_eop_coder_configuration_rtp_support.header.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_CONF;
+	cmd_eop_coder_configuration_rtp_support.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_configuration_rtp_support)/2;
+	memcpy(&cmd_eop_coder_configuration_rtp_support.eop_coder_configuration_rtp_support,
+			&ctx->eop_coder_configuration_rtp_support,
+			sizeof(struct vin_eop_coder_configuration_rtp_support));
+	if (vin_write(ctx, 1, &cmd_eop_coder_configuration_rtp_support, sizeof(struct vin_cmd_eop_coder_configuration_rtp_support)) < 0) {
+		ctx->error = errno;
+		goto vin_coder_configuration_rtp_support_error;
+	}
+	return 0;
+
+vin_coder_configuration_rtp_support_error:
+	return -1;
+}
+
 int vin_coder_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch)
 {
 	struct vin_cmd_eop_coder_channel_configuration_rtp_support cmd_eop_coder_channel_configuration_rtp_support;
