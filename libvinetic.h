@@ -143,7 +143,6 @@ extern int vin_ali_control(struct vinetic_context *ctx);
 	({ \
 		_ctx.eop_ali_control.en = VIN_DIS; \
 		int __res = vin_ali_control(&_ctx); \
-		if (__res < 0) _ctx.eop_ali_control.en = VIN_EN; \
 		__res; \
 	})
 
@@ -183,7 +182,6 @@ extern int vin_ali_channel(struct vinetic_context *ctx, unsigned int ch);
 	({ \
 		_ctx.eop_ali_channel[_ch].en = VIN_DIS; \
 		int __res = vin_ali_channel(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_ali_channel[_ch].en = VIN_EN; \
 		__res; \
 	})
 
@@ -262,7 +260,6 @@ extern int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch);
 	({ \
 		_ctx.eop_ali_near_end_lec[_ch].en = VIN_DIS; \
 		int __res = vin_ali_near_end_lec(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_ali_near_end_lec[_ch].en = VIN_EN; \
 		__res; \
 	})
 
@@ -313,7 +310,6 @@ extern int vin_signaling_control(struct vinetic_context *ctx);
 	({ \
 		_ctx.eop_signaling_control.en = VIN_DIS; \
 		int __res = vin_signaling_control(&_ctx); \
-		if (__res < 0) _ctx.eop_signaling_control.en = VIN_EN; \
 		__res; \
 	})
 
@@ -353,7 +349,6 @@ extern int vin_signaling_channel(struct vinetic_context *ctx, unsigned int ch);
 	({ \
 		_ctx.eop_signaling_channel[_ch].en = VIN_DIS; \
 		int __res = vin_signaling_channel(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_signaling_channel[_ch].en = VIN_EN; \
 		__res; \
 	})
 
@@ -396,7 +391,6 @@ extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
 	({ \
 		_ctx.eop_dtmf_receiver[_ch].en = VIN_DIS; \
 		int __res = vin_dtmf_receiver(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_dtmf_receiver[_ch].en = VIN_EN; \
 		__res; \
 	})
 
@@ -456,7 +450,6 @@ extern int vin_coder_control(struct vinetic_context *ctx);
 	({ \
 		_ctx.eop_coder_control.en = VIN_DIS; \
 		int __res = vin_coder_control(&_ctx); \
-		if (__res < 0) _ctx.eop_coder_control.en = VIN_EN; \
 		__res; \
 	})
 
@@ -497,7 +490,6 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 	({ \
 		_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_DIS; \
 		int __res = vin_coder_channel_speech_compression(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_coder_channel_speech_compression[_ch].en = VIN_EN; \
 		__res; \
 	})
 
