@@ -402,17 +402,17 @@ extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
 		__res; \
 	})
 
-#define vin_coder_channel_set_as(_ctx, _ch, _as) \
+#define vin_dtmf_receiver_set_as(_ctx, _ch, _as) \
 	do { \
 		_ctx.eop_dtmf_receiver[_ch].as = _as; \
 	} while (0)
 
-#define vin_coder_channel_set_is(_ctx, _ch, _is) \
+#define vin_dtmf_receiver_set_is(_ctx, _ch, _is) \
 	do { \
 		_ctx.eop_dtmf_receiver[_ch].is = _is; \
 	} while (0)
 
-#define vin_coder_channel_set_et(_ctx, _ch, _et) \
+#define vin_dtmf_receiver_set_et(_ctx, _ch, _et) \
 	do { \
 		_ctx.eop_dtmf_receiver[_ch].et = _et; \
 	} while (0)
