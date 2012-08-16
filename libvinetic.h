@@ -39,6 +39,8 @@ struct vinetic_context {
 	struct vin_status_registers status_old;
 	struct vin_status_registers status_mask;
 
+	size_t resources[8]; // shared coder, data pump, pcm, cpt3
+
 	struct vin_eop_ali_control eop_ali_control;
 	struct vin_eop_ali_channel eop_ali_channel[4];
 	struct vin_eop_ali_near_end_lec eop_ali_near_end_lec[4];
@@ -128,6 +130,42 @@ extern int vin_set_opmode(struct vinetic_context *ctx, unsigned int ch, unsigned
 		int __res = vin_set_endian_mode(_ctx, VIN_LITTLE_ENDIAN); \
 		__res; \
 	})
+
+#define vin_get_resource(_ctx) \
+	({ \
+		int __res = -1; \
+		if (!_ctx.resources[7]) { \
+			_ctx.resources[7] = 1; \
+			__res = 7; \
+		} else if (!_ctx.resources[6]) { \
+			_ctx.resources[6] = 1; \
+			__res = 6; \
+		} else if (!_ctx.resources[5]) { \
+			_ctx.resources[5] = 1; \
+			__res = 5; \
+		} else if (!_ctx.resources[4]) { \
+			_ctx.resources[4] = 1; \
+			__res = 4; \
+		} else if (!_ctx.resources[0]) { \
+			_ctx.resources[0] = 1; \
+			__res = 0; \
+		} else if (!_ctx.resources[1]) { \
+			_ctx.resources[1] = 1; \
+			__res = 1; \
+		} else if (!_ctx.resources[2]) { \
+			_ctx.resources[2] = 1; \
+			__res = 2; \
+		} else if (!_ctx.resources[3]) { \
+			_ctx.resources[3] = 1; \
+			__res = 3; \
+		} \
+		__res; \
+	})
+
+#define vin_put_resource(_ctx, _nr) \
+	do { \
+		_ctx.resources[_nr] = 0; \
+	} while (0)
 
 extern int vin_ali_control(struct vinetic_context *ctx);
 
@@ -479,15 +517,25 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 
 #define vin_coder_channel_enable(_ctx, _ch) \
 	({ \
-		_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_EN; \
-		_ctx.eop_coder_channel_speech_compression[_ch].codnr = _ch; \
-		int __res = vin_coder_channel_speech_compression(&_ctx, _ch); \
-		if (__res < 0) _ctx.eop_coder_channel_speech_compression[_ch].en = VIN_DIS; \
+		int __res; \
+		_ctx.eop_coder_channel_speech_compression[_ch].codnr = vin_get_resource(_ctx); \
+		if (_ctx.eop_coder_channel_speech_compression[_ch].codnr < 0) { \
+			_ctx.error = EBUSY; \
+			__res = -1; \
+		} else { \
+			_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_EN; \
+			__res = vin_coder_channel_speech_compression(&_ctx, _ch); \
+			if (__res < 0) { \
+				vin_put_resource(_ctx, _ctx.eop_coder_channel_speech_compression[_ch].codnr); \
+				_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_DIS; \
+			} \
+		} \
 		__res; \
 	})
 
 #define vin_coder_channel_disable(_ctx, _ch) \
 	({ \
+		vin_put_resource(_ctx, _ctx.eop_coder_channel_speech_compression[_ch].codnr); \
 		_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_DIS; \
 		int __res = vin_coder_channel_speech_compression(&_ctx, _ch); \
 		__res; \
