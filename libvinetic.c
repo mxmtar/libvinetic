@@ -1443,6 +1443,8 @@ int vin_set_opmode(struct vinetic_context *ctx, unsigned int ch, unsigned int mo
 {
 	union vin_cmd_short cmd;
 
+	ctx->ali_opmode[ch] = mode;
+
 	cmd.bits.rw = VIN_WRITE;
 	cmd.bits.sc = 1;
 	cmd.bits.bc = 0;

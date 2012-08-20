@@ -44,6 +44,7 @@ struct vinetic_context {
 	struct vin_eop_ali_control eop_ali_control;
 	struct vin_eop_ali_channel eop_ali_channel[4];
 	struct vin_eop_ali_near_end_lec eop_ali_near_end_lec[4];
+	size_t ali_opmode[4];
 
 	struct vin_eop_coder_control eop_coder_control;
 	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
