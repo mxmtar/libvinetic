@@ -291,6 +291,7 @@ char *vin_revision_str(struct vinetic_context *ctx)
 int vin_reset_status(struct vinetic_context *ctx)
 {
 	int rc = ioctl(ctx->dev_fd, VINETIC_RESET_STATUS, NULL);
+	ctx->errorline = __LINE__ - 1;
 	ctx->error = errno;
 	return rc;
 }
@@ -386,16 +387,17 @@ ssize_t vin_write(struct vinetic_context *ctx, int track_err, const void *buf, s
 			ctx->error = errno;
 			goto vin_write_end;
 		}
+/*
 		if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
 // 			PRINTF("host_err=%u\n", bxsr.bxsr2.bits.host_err);
 // 			PRINTF("pibx_of=%u\n", bxsr.bxsr2.bits.pibx_of);
 // 			PRINTF("cibx_of=%u\n", bxsr.bxsr2.bits.cibx_of);
 			;
 		}
+*/
 		if (bxsr.bxsr1.bits.cerr) {
 			ctx->errorline = __LINE__ - 1;
 			ctx->error = errno = ENOMSG;
-// 			PRINTF("cerr=%u\n", bxsr.bxsr1.bits.cerr);
 			if (vin_cerr_acknowledge(ctx) < 0) {
 				ctx->errorline = __LINE__ - 1;
 				ctx->error = errno;
