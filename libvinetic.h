@@ -93,7 +93,7 @@ extern char *vin_revision_str(struct vinetic_context *ctx);
 
 extern int vin_read_fw_version(struct vinetic_context *ctx);
 
-extern ssize_t vin_write(struct vinetic_context *ctx, int track_err, const void *buf, size_t count);
+extern ssize_t vin_write(struct vinetic_context *ctx, size_t track_err, const void *buf, size_t count);
 
 extern ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size_t count);
 
