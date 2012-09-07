@@ -112,44 +112,94 @@ void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 	}
 }
 
-void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
+int vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	int res;
+	struct stat buf;
 	va_list ap;
+
 	va_start(ap, fmt);
 	vsnprintf(ctx->pram_path, sizeof(ctx->pram_path), fmt, ap);
 	va_end(ap);
+
+	if ((res = stat(ctx->pram_path, &buf)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+	}
+
+	return res;
 }
 
-void vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...)
+int vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	int res;
+	struct stat buf;
 	va_list ap;
+
 	va_start(ap, fmt);
 	vsnprintf(ctx->dram_path, sizeof(ctx->dram_path), fmt, ap);
 	va_end(ap);
+
+	if ((res = stat(ctx->dram_path, &buf)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+	}
+
+	return res;
 }
 
-void vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...)
+int vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	int res;
+	struct stat buf;
 	va_list ap;
+
 	va_start(ap, fmt);
 	vsnprintf(ctx->alm_dsp_ab_path, sizeof(ctx->alm_dsp_ab_path), fmt, ap);
 	va_end(ap);
+
+	if ((res = stat(ctx->alm_dsp_ab_path, &buf)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+	}
+
+	return res;
 }
 
-void vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...)
+int vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	int res;
+	struct stat buf;
 	va_list ap;
+
 	va_start(ap, fmt);
 	vsnprintf(ctx->alm_dsp_cd_path, sizeof(ctx->alm_dsp_cd_path), fmt, ap);
 	va_end(ap);
+
+	if ((res = stat(ctx->alm_dsp_cd_path, &buf)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+	}
+
+	return res;
 }
 
-void vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...)
+int vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...)
 {
+	int res;
+	struct stat buf;
 	va_list ap;
+
 	va_start(ap, fmt);
 	vsnprintf(ctx->cram_path, sizeof(ctx->cram_path), fmt, ap);
 	va_end(ap);
+
+	if ((res = stat(ctx->cram_path, &buf)) < 0) {
+		ctx->errorline = __LINE__ - 1;
+		ctx->error = errno;
+	}
+
+	return res;
 }
 
 int vin_open(struct vinetic_context *ctx)

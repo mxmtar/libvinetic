@@ -60,11 +60,11 @@ struct vinetic_context {
 };
 
 extern void vin_init(struct vinetic_context *ctx, const char *fmt, ...);
-extern void vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...);
-extern void vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...);
-extern void vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...);
-extern void vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...);
-extern void vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...);
+extern int vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...);
+extern int vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...);
+extern int vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...);
+extern int vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...);
+extern int vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...);
 extern int vin_open(struct vinetic_context *ctx);
 extern void vin_close(struct vinetic_context *ctx);
 extern int vin_reset(struct vinetic_context *ctx);
