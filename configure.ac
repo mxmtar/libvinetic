@@ -4,7 +4,7 @@
 AC_PREREQ([2.60])
 
 # set project attribute
-AC_INIT([libvinetic], [0.1.0])
+AC_INIT([libvinetic], [1.0.0])
 
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
@@ -27,7 +27,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([libvinetic.c])
 
 AC_COPYRIGHT("Polygator")
-AC_REVISION(1)
+AC_REVISION(1.0.0)
 
 # prepare autoconfig header data
 AC_CONFIG_HEADER([autoconfig.h])
