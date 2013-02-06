@@ -29,8 +29,10 @@ struct vinetic_context {
 
 	char *dev_name;
 
-	int error;
-	int errorline;
+	char message_stack_buff[4096];
+	size_t message_stack_len;
+	char *message_stack_ptr;
+	const char *message_stack_out;
 
 	u_int16_t revision;
 
@@ -84,7 +86,9 @@ extern int vin_poll_set(struct vinetic_context *ctx, int poll);
 extern char *vin_get_dev_name(struct vinetic_context *ctx);
 extern void vin_set_dev_name(struct vinetic_context *ctx, char *name);
 
-extern char *vin_error_str(struct vinetic_context *ctx);
+extern void vin_message_stack_printf(struct vinetic_context *ctx, const char *format, ...);
+extern const char *vin_message_stack_check_line(struct vinetic_context *ctx);
+extern const char *vin_message_stack_get_line(struct vinetic_context *ctx);
 
 #define VIN_REV_13 0x2442
 #define VIN_REV_14 0x2484
@@ -521,7 +525,7 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 		int __res; \
 		_ctx.eop_coder_channel_speech_compression[_ch].codnr = vin_get_resource(_ctx); \
 		if (_ctx.eop_coder_channel_speech_compression[_ch].codnr < 0) { \
-			_ctx.error = EBUSY; \
+			vin_message_stack_printf(&_ctx, "coder resources exhausted"); \
 			__res = -1; \
 		} else { \
 			_ctx.eop_coder_channel_speech_compression[_ch].en = VIN_EN; \
