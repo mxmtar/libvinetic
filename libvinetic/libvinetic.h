@@ -36,11 +36,6 @@ struct vinetic_context {
 
 	u_int16_t revision;
 
-	// status
-	struct vin_status_registers status;
-	struct vin_status_registers status_old;
-	struct vin_status_registers status_mask;
-
 	size_t resources[8]; // shared coder, data pump, pcm, cpt3
 
 	struct vin_eop_ali_control eop_ali_control;
@@ -59,6 +54,17 @@ struct vinetic_context {
 	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
 
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
+
+	// status
+	struct vin_status_registers status;
+	struct vin_status_registers status_old;
+	struct vin_status_registers status_mask;
+
+	// hook handlers
+	struct vinetic_hook_handler {
+		void *data;
+		void (* handler)(void *data, int hook_state);
+	} vin_hook_handler[4];
 };
 
 extern void vin_init(struct vinetic_context *ctx, const char *fmt, ...);
@@ -77,6 +83,8 @@ extern u_int16_t vin_read_dia(struct vinetic_context *ctx);
 
 extern int vin_reset_status(struct vinetic_context *ctx);
 extern ssize_t vin_get_status(struct vinetic_context *ctx);
+extern ssize_t vin_set_status_mask(struct vinetic_context *ctx);
+extern void vin_status_monitor(struct vinetic_context *ctx);
 
 extern int vin_resync(struct vinetic_context *ctx);
 extern int vin_cerr_acknowledge(struct vinetic_context *ctx);
@@ -701,6 +709,20 @@ extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, uns
 
 extern double vin_gainem_to_gaindb(u_int8_t em);
 extern u_int8_t vin_gaindb_to_gainem(double g);
+
+#define vin_set_hook_handler(_ctx, _ch, _handler, _data) \
+	do { \
+		_ctx.vin_hook_handler[_ch].handler = _handler; \
+		_ctx.vin_hook_handler[_ch].data = _data; \
+		if (_ch == 3) \
+			_ctx.status_mask.sr.srs1_3.bits.hook = 1; \
+		else if (_ch == 2) \
+			_ctx.status_mask.sr.srs1_2.bits.hook = 1; \
+		else if (_ch == 1) \
+			_ctx.status_mask.sr.srs1_1.bits.hook = 1; \
+		else \
+			_ctx.status_mask.sr.srs1_0.bits.hook = 1; \
+	} while (0)
 
 #endif //__LIBVINETIC_H__
 

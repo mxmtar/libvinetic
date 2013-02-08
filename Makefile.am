@@ -7,5 +7,7 @@ libvinetic_a_CFLAGS = $(AM_CFLAGS) -Wall -fPIC -DPIC
 
 nobase_include_HEADERS = \
 	libvinetic/libvinetic.h
+nobase_nodist_include_HEADERS = \
+	libvinetic/version.h
 
 CLEANFILES = *~

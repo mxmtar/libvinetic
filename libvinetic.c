@@ -572,6 +572,31 @@ vin_get_status_end:
 	return res;
 }
 
+ssize_t vin_set_status_mask(struct vinetic_context *ctx)
+{
+	ssize_t res;
+	off64_t lsres;
+
+	// read command
+	if ((lsres = lseek64(ctx->dev_fd, 0xffffffff, SEEK_SET)) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		res = (ssize_t)lsres;
+		goto vin_set_status_mask_end;
+	}
+	if ((res = write(ctx->dev_fd, &ctx->status_mask, sizeof(struct vin_status_registers))) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_set_status_mask_end;
+	}
+
+vin_set_status_mask_end:
+	return res;
+}
+
+void vin_status_monitor(struct vinetic_context *ctx)
+{
+	;
+}
+
 u_int16_t vin_phi_revision(struct vinetic_context *ctx)
 {
 	u_int16_t rev;
