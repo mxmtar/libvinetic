@@ -555,8 +555,6 @@ ssize_t vin_get_status(struct vinetic_context *ctx)
 	ssize_t res;
 	off64_t lsres;
 
-	memcpy(&ctx->status_old, &ctx->status, sizeof(struct vin_status_registers));
-
 	// read command
 	if ((lsres = lseek64(ctx->dev_fd, 0xffffffff, SEEK_SET)) < 0) {
 		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
@@ -594,7 +592,132 @@ vin_set_status_mask_end:
 
 void vin_status_monitor(struct vinetic_context *ctx)
 {
-	;
+	struct vin_status_registers status_changed;
+
+	// get changes
+	status_changed.sr.sre1_0.full = (ctx->status.sr.sre1_0.full ^ ctx->status_old.sr.sre1_0.full) & ctx->status_mask.sr.sre1_0.full;
+	status_changed.sr.sre2_0.full = (ctx->status.sr.sre2_0.full ^ ctx->status_old.sr.sre2_0.full) & ctx->status_mask.sr.sre2_0.full;
+	status_changed.sr.srs1_0.full = (ctx->status.sr.srs1_0.full ^ ctx->status_old.sr.srs1_0.full) & ctx->status_mask.sr.srs1_0.full;
+	status_changed.sr.srs2_0.full = (ctx->status.sr.srs2_0.full ^ ctx->status_old.sr.srs2_0.full) & ctx->status_mask.sr.srs2_0.full;
+	status_changed.sr.sre1_1.full = (ctx->status.sr.sre1_1.full ^ ctx->status_old.sr.sre1_1.full) & ctx->status_mask.sr.sre1_1.full;
+	status_changed.sr.sre2_1.full = (ctx->status.sr.sre2_1.full ^ ctx->status_old.sr.sre2_1.full) & ctx->status_mask.sr.sre2_1.full;
+	status_changed.sr.srs1_1.full = (ctx->status.sr.srs1_1.full ^ ctx->status_old.sr.srs1_1.full) & ctx->status_mask.sr.srs1_1.full;
+	status_changed.sr.srs2_1.full = (ctx->status.sr.srs2_1.full ^ ctx->status_old.sr.srs2_1.full) & ctx->status_mask.sr.srs2_1.full;
+	status_changed.sr.sre1_2.full = (ctx->status.sr.sre1_2.full ^ ctx->status_old.sr.sre1_2.full) & ctx->status_mask.sr.sre1_2.full;
+	status_changed.sr.sre2_2.full = (ctx->status.sr.sre2_2.full ^ ctx->status_old.sr.sre2_2.full) & ctx->status_mask.sr.sre2_2.full;
+	status_changed.sr.srs1_2.full = (ctx->status.sr.srs1_2.full ^ ctx->status_old.sr.srs1_2.full) & ctx->status_mask.sr.srs1_2.full;
+	status_changed.sr.srs2_2.full = (ctx->status.sr.srs2_2.full ^ ctx->status_old.sr.srs2_2.full) & ctx->status_mask.sr.srs2_2.full;
+	status_changed.sr.sre1_3.full = (ctx->status.sr.sre1_3.full ^ ctx->status_old.sr.sre1_3.full) & ctx->status_mask.sr.sre1_3.full;
+	status_changed.sr.sre2_3.full = (ctx->status.sr.sre2_3.full ^ ctx->status_old.sr.sre2_3.full) & ctx->status_mask.sr.sre2_3.full;
+	status_changed.sr.srs1_3.full = (ctx->status.sr.srs1_3.full ^ ctx->status_old.sr.srs1_3.full) & ctx->status_mask.sr.srs1_3.full;
+	status_changed.sr.srs2_3.full = (ctx->status.sr.srs2_3.full ^ ctx->status_old.sr.srs2_3.full) & ctx->status_mask.sr.srs2_3.full;
+	status_changed.sr.sre1_4.full = (ctx->status.sr.sre1_4.full ^ ctx->status_old.sr.sre1_4.full) & ctx->status_mask.sr.sre1_4.full;
+	status_changed.sr.sre2_4.full = (ctx->status.sr.sre2_4.full ^ ctx->status_old.sr.sre2_4.full) & ctx->status_mask.sr.sre2_4.full;
+	status_changed.sr.sre1_5.full = (ctx->status.sr.sre1_5.full ^ ctx->status_old.sr.sre1_5.full) & ctx->status_mask.sr.sre1_5.full;
+	status_changed.sr.sre2_5.full = (ctx->status.sr.sre2_5.full ^ ctx->status_old.sr.sre2_5.full) & ctx->status_mask.sr.sre2_5.full;
+	status_changed.sr.sre1_6.full = (ctx->status.sr.sre1_6.full ^ ctx->status_old.sr.sre1_6.full) & ctx->status_mask.sr.sre1_6.full;
+	status_changed.sr.sre2_6.full = (ctx->status.sr.sre2_6.full ^ ctx->status_old.sr.sre2_6.full) & ctx->status_mask.sr.sre2_6.full;
+	status_changed.sr.sre1_7.full = (ctx->status.sr.sre1_7.full ^ ctx->status_old.sr.sre1_7.full) & ctx->status_mask.sr.sre1_7.full;
+	status_changed.sr.sre2_7.full = (ctx->status.sr.sre2_7.full ^ ctx->status_old.sr.sre2_7.full) & ctx->status_mask.sr.sre2_7.full;
+	status_changed.hwsr.hwsr1.full = (ctx->status.hwsr.hwsr1.full ^ ctx->status_old.hwsr.hwsr1.full) & ctx->status_mask.hwsr.hwsr1.full;
+	status_changed.hwsr.hwsr2.full = (ctx->status.hwsr.hwsr2.full ^ ctx->status_old.hwsr.hwsr2.full) & ctx->status_mask.hwsr.hwsr2.full;
+	status_changed.bxsr.bxsr1.full = (ctx->status.bxsr.bxsr1.full ^ ctx->status_old.bxsr.bxsr1.full) & ctx->status_mask.bxsr.bxsr1.full;
+	status_changed.bxsr.bxsr2.full = (ctx->status.bxsr.bxsr2.full ^ ctx->status_old.bxsr.bxsr2.full) & ctx->status_mask.bxsr.bxsr2.full;
+	// store current status as old
+	memcpy(&ctx->status_old, &ctx->status, sizeof(struct vin_status_registers));
+	// handle status changes
+	if (status_changed.sr.sre1_0.full) {
+		;
+	}
+	if (status_changed.sr.sre2_0.full) {
+		;
+	}
+	if (status_changed.sr.srs1_0.full) {
+		if (status_changed.sr.srs1_0.bits.hook && ctx->vin_hook_handler[0].handler && ctx->vin_hook_handler[0].data) {
+			ctx->vin_hook_handler[0].handler(ctx->vin_hook_handler[0].data, ctx->status.sr.srs1_0.bits.hook);
+		}
+	}
+	if (status_changed.sr.srs2_0.full) {
+		;
+	}
+	if (status_changed.sr.sre1_1.full) {
+		;
+	}
+	if (status_changed.sr.sre2_1.full) {
+		;
+	}
+	if (status_changed.sr.srs1_1.full) {
+		if (status_changed.sr.srs1_1.bits.hook && ctx->vin_hook_handler[1].handler && ctx->vin_hook_handler[1].data) {
+			ctx->vin_hook_handler[1].handler(ctx->vin_hook_handler[1].data, ctx->status.sr.srs1_1.bits.hook);
+		}
+	}
+	if (status_changed.sr.srs2_1.full) {
+		;
+	}
+	if (status_changed.sr.sre1_2.full) {
+		;
+	}
+	if (status_changed.sr.sre2_2.full) {
+		;
+	}
+	if (status_changed.sr.srs1_2.full) {
+		if (status_changed.sr.srs1_2.bits.hook && ctx->vin_hook_handler[2].handler && ctx->vin_hook_handler[2].data) {
+			ctx->vin_hook_handler[2].handler(ctx->vin_hook_handler[2].data, ctx->status.sr.srs1_2.bits.hook);
+		}
+	}
+	if (status_changed.sr.srs2_2.full) {
+		;
+	}
+	if (status_changed.sr.sre1_3.full) {
+		;
+	}
+	if (status_changed.sr.sre2_3.full) {
+		;
+	}
+	if (status_changed.sr.srs1_3.full) {
+		if (status_changed.sr.srs1_3.bits.hook && ctx->vin_hook_handler[3].handler && ctx->vin_hook_handler[3].data) {
+			ctx->vin_hook_handler[3].handler(ctx->vin_hook_handler[3].data, ctx->status.sr.srs1_3.bits.hook);
+		}
+	}
+	if (status_changed.sr.srs2_3.full) {
+		;
+	}
+	if (status_changed.sr.sre1_4.full) {
+		;
+	}
+	if (status_changed.sr.sre2_4.full) {
+		;
+	}
+	if (status_changed.sr.sre1_5.full) {
+		;
+	}
+	if (status_changed.sr.sre2_5.full) {
+		;
+	}
+	if (status_changed.sr.sre1_6.full) {
+		;
+	}
+	if (status_changed.sr.sre2_6.full) {
+		;
+	}
+	if (status_changed.sr.sre1_7.full) {
+		;
+	}
+	if (status_changed.sr.sre2_7.full) {
+		;
+	}
+	if (status_changed.hwsr.hwsr1.full) {
+		;
+	}
+	if (status_changed.hwsr.hwsr2.full) {
+		;
+	}
+	if (status_changed.bxsr.bxsr1.full) {
+		;
+	}
+	if (status_changed.bxsr.bxsr2.full) {
+		;
+	}
 }
 
 u_int16_t vin_phi_revision(struct vinetic_context *ctx)

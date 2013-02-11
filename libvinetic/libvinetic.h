@@ -724,6 +724,20 @@ extern u_int8_t vin_gaindb_to_gainem(double g);
 			_ctx.status_mask.sr.srs1_0.bits.hook = 1; \
 	} while (0)
 
+#define vin_reset_hook_handler(_ctx, _ch) \
+	do { \
+		_ctx.vin_hook_handler[_ch].handler = NULL; \
+		_ctx.vin_hook_handler[_ch].data = NULL; \
+		if (_ch == 3) \
+			_ctx.status_mask.sr.srs1_3.bits.hook = 0; \
+		else if (_ch == 2) \
+			_ctx.status_mask.sr.srs1_2.bits.hook = 0; \
+		else if (_ch == 1) \
+			_ctx.status_mask.sr.srs1_1.bits.hook = 0; \
+		else \
+			_ctx.status_mask.sr.srs1_0.bits.hook = 0; \
+	} while (0)
+
 #endif //__LIBVINETIC_H__
 
 /******************************************************************************/
