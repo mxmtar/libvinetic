@@ -1571,8 +1571,7 @@ int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path
 		goto vin_download_cram_error;
 	}
 
-	while (fgets(fpbuf, sizeof(fpbuf), fp))
-	{
+	while (fgets(fpbuf, sizeof(fpbuf), fp)) {
 		res = sscanf(fpbuf, " %[A-Z0-9_] = 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X", hdr, &cfd[0], &cfd[1], &cfd[2], &cfd[3], &cfd[4], &cfd[5]);
 		if (res == 7) {
 			// Check for MBX-EMPTY
@@ -1794,6 +1793,30 @@ vin_dtmf_receiver_error:
 	return -1;
 }
 
+int vin_utg(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_utg cmd_eop_utg;
+
+	cmd_eop_utg.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_utg.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_utg.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_utg.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_utg.header.parts.first.bits.res = 0;
+	cmd_eop_utg.header.parts.first.bits.chan = ch;
+	cmd_eop_utg.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_utg.header.parts.second.eop.bits.ecmd  = VIN_EOP_UTG;
+	cmd_eop_utg.header.parts.second.eop.bits.length = sizeof(struct vin_eop_utg) / 2;
+	memcpy(&cmd_eop_utg.eop_utg, &ctx->eop_utg[ch], sizeof(struct vin_eop_utg));
+	if (vin_write(ctx, 1, &cmd_eop_utg, sizeof(struct vin_cmd_eop_utg)) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_utg_error;
+	}
+	return 0;
+
+vin_utg_error:
+	return -1;
+}
+
 int vin_signaling_channel_configuration_rtp_support(struct vinetic_context *ctx, unsigned int ch)
 {
 	struct vin_cmd_eop_signaling_channel_configuration_rtp_support cmd_eop_signaling_channel_configuration_rtp_support;
@@ -1942,6 +1965,30 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	return 0;
 
 vin_coder_channel_jb_statistic_reset_error:
+	return -1;
+}
+
+int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int ch)
+{
+	struct vin_cmd_eop_utg_coefficients cmd_eop_utg_coefficients;
+
+	cmd_eop_utg_coefficients.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_utg_coefficients.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_utg_coefficients.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_utg_coefficients.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_utg_coefficients.header.parts.first.bits.res = 0;
+	cmd_eop_utg_coefficients.header.parts.first.bits.chan = ch;
+	cmd_eop_utg_coefficients.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
+	cmd_eop_utg_coefficients.header.parts.second.eop.bits.ecmd  = VIN_EOP_UTG_COEFF;
+	cmd_eop_utg_coefficients.header.parts.second.eop.bits.length = sizeof(struct vin_eop_utg_coefficients) / 2;
+	memcpy(&cmd_eop_utg_coefficients.eop_utg_coefficients, &ctx->eop_utg_coefficients[ch], sizeof(struct vin_eop_utg_coefficients));
+	if (vin_write(ctx, 1, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_utg_coefficients_error;
+	}
+	return 0;
+
+vin_utg_coefficients_error:
 	return -1;
 }
 
