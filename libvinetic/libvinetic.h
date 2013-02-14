@@ -6,10 +6,9 @@
 #define __LIBVINETIC_H__
 
 #include <arpa/inet.h>
-
 #include <sys/types.h>
-
 #include <limits.h>
+#include <math.h>
 
 #include "polygator/vinetic-ioctl.h"
 #include "polygator/vinetic-def.h"
@@ -885,32 +884,42 @@ extern int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int ch);
 
 #define vin_utg_coefficients_set_fd_in_att(_ctx, _ch, _fd_in_att) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].fd_in_att = _fd_in_att; \
+	_ctx.eop_utg_coefficients[_ch].fd_in_att = (u_int16_t)(32767.f * powf(10.f, (-_fd_in_att / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_fd_in_sp(_ctx, _ch, _fd_in_sp) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].fd_in_sp = _fd_in_sp; \
+	_ctx.eop_utg_coefficients[_ch].fd_in_sp = (u_int16_t)(32768.f * _fd_in_sp); \
+} while (0)
+
+#define vin_utg_coefficients_set_fd_in_sp_log(_ctx, _ch, _fd_in_sp) \
+do { \
+	_ctx.eop_utg_coefficients[_ch].fd_in_sp = (u_int16_t)(256.f * powf(10.f, (_fd_in_sp / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_fd_in_tim(_ctx, _ch, _fd_in_tim) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].fd_in_tim = _fd_in_tim; \
+	_ctx.eop_utg_coefficients[_ch].fd_in_tim = _fd_in_tim * 8; \
 } while (0)
 
 #define vin_utg_coefficients_set_fd_ot_sp(_ctx, _ch, _fd_ot_sp) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].fd_ot_sp = _fd_ot_sp; \
+	_ctx.eop_utg_coefficients[_ch].fd_ot_sp = (u_int16_t)(32768.f * _fd_ot_sp); \
+} while (0)
+
+#define vin_utg_coefficients_set_fd_ot_sp_log(_ctx, _ch, _fd_ot_sp) \
+do { \
+	_ctx.eop_utg_coefficients[_ch].fd_ot_sp = (u_int16_t)(256.f * powf(10.f, (_fd_ot_sp / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_fd_ot_tim(_ctx, _ch, _fd_ot_tim) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].fd_ot_tim = _fd_ot_tim; \
+	_ctx.eop_utg_coefficients[_ch].fd_ot_tim = _fd_ot_tim * 8; \
 } while (0)
 
 #define vin_utg_coefficients_set_mod_12(_ctx, _ch, _mod_12) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].mod_12 = _mod_12; \
+	_ctx.eop_utg_coefficients[_ch].mod_12 = (int8_t)(128.f * -_mod_12); \
 } while (0)
 
 #define vin_utg_coefficients_set_f1(_ctx, _ch, _f1) \
@@ -935,22 +944,22 @@ do { \
 
 #define vin_utg_coefficients_set_lev_1(_ctx, _ch, _lev_1) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].lev_1 = _lev_1; \
+	_ctx.eop_utg_coefficients[_ch].lev_1 = (u_int8_t)(256.f * powf(10.f, (_lev_1 / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_lev_2(_ctx, _ch, _lev_2) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].lev_2 = _lev_2; \
+	_ctx.eop_utg_coefficients[_ch].lev_2 = (u_int8_t)(256.f * powf(10.f, (_lev_2 / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_lev_3(_ctx, _ch, _lev_3) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].lev_3 = _lev_3; \
+	_ctx.eop_utg_coefficients[_ch].lev_3 = (u_int8_t)(256.f * powf(10.f, (_lev_3 / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_lev_4(_ctx, _ch, _lev_4) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].lev_4 = _lev_4; \
+	_ctx.eop_utg_coefficients[_ch].lev_4 = (u_int8_t)(256.f * powf(10.f, (_lev_4 / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_t_1(_ctx, _ch, _t_1) \
@@ -1309,12 +1318,12 @@ do { \
 
 #define vin_utg_coefficients_set_go_add_a(_ctx, _ch, _go_add_a) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].go_add_a = _go_add_a; \
+	_ctx.eop_utg_coefficients[_ch].go_add_a = (u_int16_t)(32768.f * powf(10.f, (_go_add_a / 20.f))); \
 } while (0)
 
 #define vin_utg_coefficients_set_go_add_b(_ctx, _ch, _go_add_b) \
 do { \
-	_ctx.eop_utg_coefficients[_ch].go_add_b = _go_add_b; \
+	_ctx.eop_utg_coefficients[_ch].go_add_b = (u_int16_t)(32768.f * powf(10.f, (_go_add_b / 20.f))); \
 } while (0)
 
 #define VIN_GAINDB_MIN -24.08
