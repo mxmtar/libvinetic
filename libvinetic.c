@@ -1968,11 +1968,11 @@ vin_coder_channel_jb_statistic_reset_error:
 	return -1;
 }
 
-int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int ch)
+int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
 {
 	struct vin_cmd_eop_utg_coefficients cmd_eop_utg_coefficients;
 
-	cmd_eop_utg_coefficients.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_utg_coefficients.header.parts.first.bits.rw = rw;
 	cmd_eop_utg_coefficients.header.parts.first.bits.sc = VIN_SC_NO;
 	cmd_eop_utg_coefficients.header.parts.first.bits.bc = VIN_BC_NO;
 	cmd_eop_utg_coefficients.header.parts.first.bits.cmd = VIN_CMD_EOP;
@@ -1981,14 +1981,264 @@ int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int ch)
 	cmd_eop_utg_coefficients.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
 	cmd_eop_utg_coefficients.header.parts.second.eop.bits.ecmd  = VIN_EOP_UTG_COEFF;
 	cmd_eop_utg_coefficients.header.parts.second.eop.bits.length = sizeof(struct vin_eop_utg_coefficients) / 2;
-	memcpy(&cmd_eop_utg_coefficients.eop_utg_coefficients, &ctx->eop_utg_coefficients[ch], sizeof(struct vin_eop_utg_coefficients));
-	if (vin_write(ctx, 1, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
-		goto vin_utg_coefficients_error;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_utg_coefficients.eop_utg_coefficients, &ctx->eop_utg_coefficients[ch], sizeof(struct vin_eop_utg_coefficients));
+		if (vin_write(ctx, 1, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_utg_coefficients_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_utg_coefficients.header, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_utg_coefficients_error;
+		}
+		memcpy(&ctx->eop_utg_coefficients[ch], &cmd_eop_utg_coefficients.eop_utg_coefficients, sizeof(struct vin_eop_utg_coefficients));
 	}
+
 	return 0;
 
 vin_utg_coefficients_error:
+	return -1;
+}
+
+int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int ch, const char *tone)
+{
+#define MAX_TONE_CHUNK_LENGTH 32
+#define MAX_TONE_MASK_COUNT 6
+#define MAX_FREQUENCIES_COUNT 4
+	struct mask {
+		char data[MAX_TONE_CHUNK_LENGTH];
+		int frequency1;
+		int frequency2;
+		int modulation;
+		int duration;
+		int stop;
+		size_t repetition;
+	} masks[MAX_TONE_MASK_COUNT];
+	u_int32_t frequencies[4];
+
+	size_t count;
+	size_t i, j;
+	char *part;
+	char *input;
+	char *next;
+
+	char buf[256];
+	size_t len;
+
+	u_int32_t freq1, freq2;
+
+	count = 0;
+	memset(masks, 0 , sizeof(masks));
+	for (i = 0; i < MAX_TONE_MASK_COUNT; i++) {
+		masks[i].frequency1 = -1;
+		masks[i].frequency2 = -1;
+	}
+	memset(frequencies, 0 , sizeof(frequencies));
+	// get tone copy
+	next = input = strdup(tone);
+	if (!input) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s strdup() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_utg_set_asterisk_tone_error;
+	}
+	// parse tone
+	while (next) {
+		// check for repetition
+		len = 0;
+		for (i = 0; i < count; i++) {
+			if (i) {
+				len += snprintf(buf+len, sizeof(buf)-len, ",%s", masks[i].data);
+			} else {
+				len += snprintf(buf+len, sizeof(buf)-len, "%s", masks[i].data);
+			}
+		}
+		if (len && (len <= strlen(next)) && !strncmp(next, buf, len) && ((next[len] == '\0') || (next[len] == ','))) {
+			masks[count-1].repetition++;
+			next += len;
+			if (*next == ',') next++;
+			continue;
+		}
+		// get next tone chunk
+		part = strsep(&next, ",");
+		if (!strlen(part) || !strcmp(part, "0")) break;
+		// get empty mask
+		for (i = 0; i < MAX_TONE_MASK_COUNT; i++) {
+			if (!strlen(masks[i].data)) {
+				break;
+			}
+		}
+		if (i == MAX_TONE_MASK_COUNT) {
+			break;
+		}
+		snprintf(masks[i].data, MAX_TONE_CHUNK_LENGTH, "%s", part);
+		count++;
+		// parse tone chunk
+		freq1 = 0;
+		freq2 = 0;
+		if (*part == '!') {
+			masks[i].stop = 1;
+			part++;
+		}
+		if (sscanf(part, "%u+%u/%d", &freq1,  &freq2, &masks[i].duration) == 3) {
+			masks[i].modulation = 0;
+		} else if (sscanf(part, "%u*%u/%d", &freq1,  &freq2, &masks[i].duration) == 3) {
+			masks[i].modulation = 1;
+		} else if (sscanf(part, "%u+%u", &freq1,  &freq2) == 2) {
+			masks[i].modulation = 0;
+			masks[i].duration = -1;
+		} else if (sscanf(part, "%u*%u", &freq1,  &freq2) == 2) {
+			masks[i].modulation = 1;
+			masks[i].duration = -1;
+		} else if (sscanf(part, "%u/%d", &freq1, &masks[i].duration) == 2) {
+			masks[i].modulation = 0;
+		} else if (sscanf(part, "%u", &freq1) == 1) {
+			masks[i].modulation = 0;
+			masks[i].duration = -1;
+		} else {
+			break;
+		}
+		if (freq1 > 0) {
+			for (j = 0; j < MAX_FREQUENCIES_COUNT; j++) {
+				if (frequencies[j] == freq1) {
+					masks[i].frequency1 = j;
+					break;
+				}
+			}
+			if (j == MAX_FREQUENCIES_COUNT) {
+				for (j = 0; j < MAX_FREQUENCIES_COUNT; j++) {
+					if (!frequencies[j]) {
+						break;
+					}
+				}
+				if (j == MAX_FREQUENCIES_COUNT) {
+					break;
+				}
+				frequencies[j] = freq1;
+				masks[i].frequency1 = j;
+			}
+		}
+		if (freq2 > 0) {
+			for (j = 0; j < MAX_FREQUENCIES_COUNT; j++) {
+				if (frequencies[j] == freq2) {
+					masks[i].frequency2 = j;
+					break;
+				}
+			}
+			if (j == MAX_FREQUENCIES_COUNT) {
+				for (j = 0; j < MAX_FREQUENCIES_COUNT; j++) {
+					if (!frequencies[j]) {
+						break;
+					}
+				}
+				if (j == MAX_FREQUENCIES_COUNT) {
+					break;
+				}
+				frequencies[j] = freq2;
+				masks[i].frequency2 = j;
+			}
+		}
+	}
+	// set UTG coefficients
+	vin_utg_coefficients_set_fd_in_att(ctx, ch, 0.f);
+	vin_utg_coefficients_set_fd_in_sp(ctx, ch, 0.f);
+	vin_utg_coefficients_set_fd_in_tim(ctx, ch, 0);
+	vin_utg_coefficients_set_fd_ot_sp(ctx, ch, 0.f);
+	vin_utg_coefficients_set_fd_ot_tim(ctx, ch, 0);
+	vin_utg_coefficients_set_mod_12(ctx, ch, 0.9f);
+	vin_utg_coefficients_set_f1(ctx, ch, frequencies[0]);
+	vin_utg_coefficients_set_f2(ctx, ch, frequencies[1]);
+	vin_utg_coefficients_set_f3(ctx, ch, frequencies[2]);
+	vin_utg_coefficients_set_f4(ctx, ch, frequencies[3]);
+	vin_utg_coefficients_set_lev_1(ctx, ch, 0.f);
+	vin_utg_coefficients_set_lev_2(ctx, ch, 0.f);
+	vin_utg_coefficients_set_lev_3(ctx, ch, 0.f);
+	vin_utg_coefficients_set_lev_4(ctx, ch, 0.f);
+	vin_utg_coefficients_set_go_add_a(ctx, ch, 0.f);
+	vin_utg_coefficients_set_go_add_b(ctx, ch, 0.f);
+	// mask 1
+	vin_utg_coefficients_set_t_1(ctx, ch, masks[0].duration);
+	vin_utg_coefficients_set_msk_1_nxt(ctx, ch, (((masks[0].repetition) || (count == 1))?0:1));
+	vin_utg_coefficients_set_msk_1_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_1_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_1_f1(ctx, ch, (((masks[0].frequency1 == 0) || (masks[0].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_1_f2(ctx, ch, (((masks[0].frequency1 == 1) || (masks[0].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_1_f3(ctx, ch, (((masks[0].frequency1 == 2) || (masks[0].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_1_f4(ctx, ch, (((masks[0].frequency1 == 3) || (masks[0].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_1_m12(ctx, ch, masks[0].modulation);
+	vin_utg_coefficients_set_msk_1_rep(ctx, ch, ((masks[0].repetition > 7)?7:masks[0].repetition));
+	vin_utg_coefficients_set_msk_1_sa(ctx, ch, ((count == 1)?masks[0].stop:0));
+	// mask 2
+	vin_utg_coefficients_set_t_2(ctx, ch, masks[1].duration);
+	vin_utg_coefficients_set_msk_2_nxt(ctx, ch, (((masks[1].repetition) || (count == 2))?0:2));
+	vin_utg_coefficients_set_msk_2_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_2_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_2_f1(ctx, ch, (((masks[1].frequency1 == 0) || (masks[1].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_2_f2(ctx, ch, (((masks[1].frequency1 == 1) || (masks[1].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_2_f3(ctx, ch, (((masks[1].frequency1 == 2) || (masks[1].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_2_f4(ctx, ch, (((masks[1].frequency1 == 3) || (masks[1].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_2_m12(ctx, ch, masks[1].modulation);
+	vin_utg_coefficients_set_msk_2_rep(ctx, ch, ((masks[1].repetition > 7)?7:masks[1].repetition));
+	vin_utg_coefficients_set_msk_2_sa(ctx, ch, ((count == 2)?masks[1].stop:0));
+	// mask 3
+	vin_utg_coefficients_set_t_3(ctx, ch, masks[2].duration);
+	vin_utg_coefficients_set_msk_3_nxt(ctx, ch, (((masks[2].repetition) || (count == 3))?0:3));
+	vin_utg_coefficients_set_msk_3_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_3_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_3_f1(ctx, ch, (((masks[2].frequency1 == 0) || (masks[2].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_3_f2(ctx, ch, (((masks[2].frequency1 == 1) || (masks[2].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_3_f3(ctx, ch, (((masks[2].frequency1 == 2) || (masks[2].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_3_f4(ctx, ch, (((masks[2].frequency1 == 3) || (masks[2].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_3_m12(ctx, ch, masks[2].modulation);
+	vin_utg_coefficients_set_msk_3_rep(ctx, ch, ((masks[2].repetition > 7)?7:masks[2].repetition));
+	vin_utg_coefficients_set_msk_3_sa(ctx, ch, ((count == 3)?masks[2].stop:0));
+	// mask 4
+	vin_utg_coefficients_set_t_4(ctx, ch, masks[3].duration);
+	vin_utg_coefficients_set_msk_4_nxt(ctx, ch, (((masks[3].repetition) || (count == 4))?0:4));
+	vin_utg_coefficients_set_msk_4_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_4_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_4_f1(ctx, ch, (((masks[3].frequency1 == 0) || (masks[3].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_4_f2(ctx, ch, (((masks[3].frequency1 == 1) || (masks[3].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_4_f3(ctx, ch, (((masks[3].frequency1 == 2) || (masks[3].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_4_f4(ctx, ch, (((masks[3].frequency1 == 3) || (masks[3].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_4_m12(ctx, ch, masks[3].modulation);
+	vin_utg_coefficients_set_msk_4_rep(ctx, ch, ((masks[3].repetition > 7)?7:masks[3].repetition));
+	vin_utg_coefficients_set_msk_4_sa(ctx, ch, ((count == 4)?masks[3].stop:0));
+	// mask 5
+	vin_utg_coefficients_set_t_5(ctx, ch, masks[4].duration);
+	vin_utg_coefficients_set_msk_5_nxt(ctx, ch, (((masks[4].repetition) || (count == 5))?0:5));
+	vin_utg_coefficients_set_msk_5_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_5_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_5_f1(ctx, ch, (((masks[4].frequency1 == 0) || (masks[4].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_5_f2(ctx, ch, (((masks[4].frequency1 == 1) || (masks[4].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_5_f3(ctx, ch, (((masks[4].frequency1 == 2) || (masks[4].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_5_f4(ctx, ch, (((masks[4].frequency1 == 3) || (masks[4].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_5_m12(ctx, ch, masks[4].modulation);
+	vin_utg_coefficients_set_msk_5_rep(ctx, ch, ((masks[4].repetition > 7)?7:masks[4].repetition));
+	vin_utg_coefficients_set_msk_5_sa(ctx, ch, ((count == 5)?masks[4].stop:0));
+	// mask 6
+	vin_utg_coefficients_set_t_6(ctx, ch, masks[5].duration);
+	vin_utg_coefficients_set_msk_6_nxt(ctx, ch, (((masks[5].repetition) || (count == 6))?0:0));
+	vin_utg_coefficients_set_msk_6_fi(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_6_fo(ctx, ch, 0);
+	vin_utg_coefficients_set_msk_6_f1(ctx, ch, (((masks[5].frequency1 == 0) || (masks[5].frequency2 == 0))?1:0));
+	vin_utg_coefficients_set_msk_6_f2(ctx, ch, (((masks[5].frequency1 == 1) || (masks[5].frequency2 == 1))?1:0));
+	vin_utg_coefficients_set_msk_6_f3(ctx, ch, (((masks[5].frequency1 == 2) || (masks[5].frequency2 == 2))?1:0));
+	vin_utg_coefficients_set_msk_6_f4(ctx, ch, (((masks[5].frequency1 == 3) || (masks[5].frequency2 == 3))?1:0));
+	vin_utg_coefficients_set_msk_6_m12(ctx, ch, masks[5].modulation);
+	vin_utg_coefficients_set_msk_6_rep(ctx, ch, ((masks[5].repetition > 7)?7:masks[5].repetition));
+	vin_utg_coefficients_set_msk_6_sa(ctx, ch, ((count == 6)?masks[5].stop:0));
+	// write UTG coefficients
+	if (vin_utg_coefficients_write(ctx, ch) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_utg_coefficients_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_utg_set_asterisk_tone_error;
+	}
+
+	free(input);
+	return 0;
+
+vin_utg_set_asterisk_tone_error:
+	if (input) free(input);
 	return -1;
 }
 
