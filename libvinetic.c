@@ -90,21 +90,33 @@ static const struct vin_eop_coder_channel_configuration_rtp_support default_eop_
 
 static void vin_message_stack_init(struct vinetic_context *ctx)
 {
-	ctx->message_stack_buff[0] = '\0';
+	if (ctx->message_stack_buf) {
+		free(ctx->message_stack_buf);
+	}
+	ctx->message_stack_buf = NULL;
 	ctx->message_stack_len = 0;
-	ctx->message_stack_ptr = ctx->message_stack_buff;
-	ctx->message_stack_out = ctx->message_stack_buff;
+	ctx->message_stack_ptr = NULL;
+	ctx->message_stack_out = NULL;
 }
 
 void vin_message_stack_printf(struct vinetic_context *ctx, const char *format, ...)
 {
 	va_list ap;
 
-	va_start(ap, format);
-	ctx->message_stack_len += vsnprintf(ctx->message_stack_buff + ctx->message_stack_len, sizeof(ctx->message_stack_buff) - ctx->message_stack_len, format, ap);
-	va_end(ap);
+	ctx->message_stack_buf = realloc(ctx->message_stack_buf, ctx->message_stack_len + 1024);
 
-	ctx->message_stack_len += snprintf(ctx->message_stack_buff + ctx->message_stack_len, sizeof(ctx->message_stack_buff) - ctx->message_stack_len, "\r\n");
+	if (ctx->message_stack_buf) {
+		va_start(ap, format);
+		ctx->message_stack_len += vsprintf(ctx->message_stack_buf + ctx->message_stack_len, format, ap);
+		va_end(ap);
+
+		ctx->message_stack_len += sprintf(ctx->message_stack_buf + ctx->message_stack_len, "\r\n");
+
+		ctx->message_stack_buf = realloc(ctx->message_stack_buf, ctx->message_stack_len + 1);
+	}
+
+	ctx->message_stack_ptr = ctx->message_stack_buf;
+	ctx->message_stack_out = ctx->message_stack_buf;
 }
 
 const char *vin_message_stack_check_line(struct vinetic_context *ctx)
@@ -147,6 +159,9 @@ void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 	ctx->dev_name = NULL;
 
 	for (i=0; i<4; i++) {
+		// SLIC's operation mode
+		ctx->ali_opmode[i] = VIN_OP_MODE_PDHI;
+		// default codec map
 		memcpy(&ctx->eop_coder_channel_configuration_rtp_support[i],
 				&default_eop_coder_channel_configuration_rtp_support,
 				sizeof(struct vin_eop_coder_channel_configuration_rtp_support));
@@ -2315,6 +2330,188 @@ u_int8_t vin_gaindb_to_gainem(double g)
 	u_int8_t e = ((u_int8_t)fe) & 0x7;
 	u_int8_t m = ((u_int8_t)fm) & 0x1f;
 	return (e << 5) | m;
+}
+
+const char *vin_ali_channel_om_str(unsigned int om)
+{
+	switch (om) {
+		case VIN_OP_MODE_PDHI: return "Power Down High Impedance";
+		case VIN_OP_MODE_RP:
+		case VIN_OP_MODE_RP1: return "Ring Pause";
+		case VIN_OP_MODE_RPHIT: return "Ring Pause HIT";
+		case VIN_OP_MODE_RPHIR: return "Ring Pause HIR";
+		case VIN_OP_MODE_RPHIRT: return "Ring Pause HIRT";
+		case VIN_OP_MODE_RPTG: return "Ring Pause Tip Ground";
+		case VIN_OP_MODE_RPRG: return "Ring Pause Ring Ground";
+		case VIN_OP_MODE_AH: return "Active High";
+		case VIN_OP_MODE_AHIT: return "Active HIT";
+		case VIN_OP_MODE_AHIR: return "Active HIR";
+		case VIN_OP_MODE_AHIRT: return "Active HIRT";
+		case VIN_OP_MODE_AB: return "Active Boost";
+		case VIN_OP_MODE_ATG: return "Active Tip Ground";
+		case VIN_OP_MODE_ARG: return "Active Ring Ground";
+		case VIN_OP_MODE_AHR: return "Active High Resistive";
+		case VIN_OP_MODE_AL: return "Active Low";
+		case VIN_OP_MODE_AT: return "Active Test";
+		case VIN_OP_MODE_ATI: return "Active Test In";
+		case VIN_OP_MODE_SPDR: return "Sleep Power Down Resistive";
+		case VIN_OP_MODE_GS: return "Ground Start";
+		case VIN_OP_MODE_AGS: return "Active Ground Start";
+		case VIN_OP_MODE_GSFRP: return "Ground Start Fix Ring";
+		case VIN_OP_MODE_R:
+		case VIN_OP_MODE_R1: return "Ringing";
+		case VIN_OP_MODE_RHIT: return "Ringing HIT";
+		case VIN_OP_MODE_RHIR: return "Ringing HIR";
+		case VIN_OP_MODE_RTG: return "Ringing Tip Ground";
+		case VIN_OP_MODE_RRG: return "Ringing Ring Ground";
+		case VIN_OP_MODE_RTDT: return "Ringing Trip Detection Test";
+		case VIN_OP_MODE_AHM: return "Active High Metering";
+		case VIN_OP_MODE_AMHIT: return "Active Metering HIT";
+		case VIN_OP_MODE_AMHIR: return "Active Metering HIR";
+		case VIN_OP_MODE_AMTG: return "Active Metering Tip Ground";
+		case VIN_OP_MODE_AMRG: return "Active Metering Ring Ground";
+		case VIN_OP_MODE_ABM: return "Active Boost Metering";
+		case VIN_OP_MODE_ALM: return "Active Low Metering";
+		case VIN_OP_MODE_PDRH: return "Power Down Resistive BATH";
+		case VIN_OP_MODE_PDRR: return "Power Down Resistive BATR";
+		case VIN_OP_MODE_PDA: return "Power Down Active";
+		default: return "Reserved";
+	}
+}
+
+const char *vin_signal_str(unsigned int sig)
+{
+	switch (sig) {
+		case VIN_SIG_NULL: return "null";
+		case VIN_SIG_PCM_OUT00: return "pcm00";
+		case VIN_SIG_PCM_OUT01: return "pcm01";
+		case VIN_SIG_PCM_OUT02: return "pcm02";
+		case VIN_SIG_PCM_OUT03: return "pcm03";
+		case VIN_SIG_PCM_OUT04: return "pcm04";
+		case VIN_SIG_PCM_OUT05: return "pcm05";
+		case VIN_SIG_PCM_OUT06: return "pcm06";
+		case VIN_SIG_PCM_OUT07: return "pcm07";
+		case VIN_SIG_PCM_OUT08: return "pcm08";
+		case VIN_SIG_PCM_OUT09: return "pcm09";
+		case VIN_SIG_PCM_OUT10: return "pcm10";
+		case VIN_SIG_PCM_OUT11: return "pcm11";
+		case VIN_SIG_PCM_OUT12: return "pcm12";
+		case VIN_SIG_PCM_OUT13: return "pcm13";
+		case VIN_SIG_PCM_OUT14: return "pcm14";
+		case VIN_SIG_PCM_OUT15: return "pcm15";
+		case VIN_SIG_ALM_OUT00: return "alm0";
+		case VIN_SIG_ALM_OUT01: return "alm1";
+		case VIN_SIG_ALM_OUT02: return "alm2";
+		case VIN_SIG_ALM_OUT03: return "alm3";
+		case VIN_SIG_COD_OUT00: return "cod0";
+		case VIN_SIG_COD_OUT01: return "cod1";
+		case VIN_SIG_COD_OUT02: return "cod2";
+		case VIN_SIG_COD_OUT03: return "cod3";
+		case VIN_SIG_COD_OUT04: return "cod4";
+		case VIN_SIG_COD_OUT05: return "cod5";
+		case VIN_SIG_COD_OUT06: return "cod6";
+		case VIN_SIG_COD_OUT07: return "cod7";
+		case VIN_SIG_SIG_OUTA0: return "siga0";
+		case VIN_SIG_SIG_OUTB0: return "sigb0";
+		case VIN_SIG_SIG_OUTA1: return "siga1";
+		case VIN_SIG_SIG_OUTB1: return "sigb1";
+		case VIN_SIG_SIG_OUTA2: return "siga2";
+		case VIN_SIG_SIG_OUTB2: return "sigb2";
+		case VIN_SIG_SIG_OUTA3: return "siga3";
+		case VIN_SIG_SIG_OUTB3: return "sigb3";
+		default: return "unknown";
+	}
+}
+
+void vin_state_dump(struct vinetic_context *ctx)
+{
+	size_t i;
+
+	vin_message_stack_printf(ctx, "Revision: %s\n", vin_revision_str(ctx));
+	vin_message_stack_printf(ctx, "EDSP firmware version %u.%u.%u\n",
+				(ctx->edsp_sw_version_register.mv << 13) +
+				(ctx->edsp_sw_version_register.prt << 12) +
+				(ctx->edsp_sw_version_register.features << 0),
+				ctx->edsp_sw_version_register.main_version,
+				ctx->edsp_sw_version_register.release);
+	// SlIC Operation Mode
+	for (i = 0; i < 4; i++) {
+		vin_message_stack_printf(ctx, "SLIC[%lu] Mode: %s\n", (unsigned long int)i, vin_ali_channel_om_str(ctx->ali_opmode[i]));
+	}
+	// ALI Module
+	vin_message_stack_printf(ctx, "ALI Module: %s\n", (ctx->eop_ali_control.en == VIN_EN)?"enabled":"disabled");
+	if (ctx->eop_ali_control.en == VIN_EN) {
+		// channels
+		for (i = 0; i < 4; i++) {
+			vin_message_stack_printf(ctx, "\tChannel[%lu]: %s\n", (unsigned long int)i, (ctx->eop_ali_channel[i].en == VIN_EN)?"enabled":"disabled");
+			if (ctx->eop_ali_channel[i].en == VIN_EN) {
+				vin_message_stack_printf(ctx, "\t\tgainr=%2.2f\n", vin_gainem_to_gaindb(ctx->eop_ali_channel[i].gainr));
+				vin_message_stack_printf(ctx, "\t\tgainx=%2.2f\n", vin_gainem_to_gaindb(ctx->eop_ali_channel[i].gainx));
+				if (ctx->eop_ali_channel[i].i1 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti1=%s\n", vin_signal_str(ctx->eop_ali_channel[i].i1));
+				if (ctx->eop_ali_channel[i].i2 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti2=%s\n", vin_signal_str(ctx->eop_ali_channel[i].i2));
+				if (ctx->eop_ali_channel[i].i3 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti3=%s\n", vin_signal_str(ctx->eop_ali_channel[i].i3));
+				if (ctx->eop_ali_channel[i].i4 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti4=%s\n", vin_signal_str(ctx->eop_ali_channel[i].i4));
+				if (ctx->eop_ali_channel[i].i5 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti5=%s\n", vin_signal_str(ctx->eop_ali_channel[i].i5));
+			}
+			vin_message_stack_printf(ctx, "\t\tNELEC: %s\n", (ctx->eop_ali_near_end_lec[i].en == VIN_EN)?"enabled":"disabled");
+			if (ctx->eop_ali_near_end_lec[i].en == VIN_EN) {
+				vin_message_stack_printf(ctx, "\t\t\tDTM: %u\n", ctx->eop_ali_near_end_lec[i].dtm);
+				vin_message_stack_printf(ctx, "\t\t\tOLDC: %u\n", ctx->eop_ali_near_end_lec[i].oldc);
+				vin_message_stack_printf(ctx, "\t\t\tAS: %u\n", ctx->eop_ali_near_end_lec[i].as);
+				vin_message_stack_printf(ctx, "\t\t\tNLP: %u\n", ctx->eop_ali_near_end_lec[i].nlp);
+				vin_message_stack_printf(ctx, "\t\t\tNLPM: %u\n", ctx->eop_ali_near_end_lec[i].nlpm);
+				vin_message_stack_printf(ctx, "\t\t\tLECNR: %u\n", ctx->eop_ali_near_end_lec[i].lecnr);
+			}
+		}
+	}
+
+	// Signaling Module
+	vin_message_stack_printf(ctx, "Signaling Module: %s\n", (ctx->eop_signaling_control.en == VIN_EN)?"enabled":"disabled");
+	if (ctx->eop_signaling_control.en == VIN_EN) {
+		// channels
+		for (i = 0; i < 4; i++) {
+			vin_message_stack_printf(ctx, "\tChannel[%lu]: %s\n", (unsigned long int)i, (ctx->eop_signaling_channel[i].en == VIN_EN)?"enabled":"disabled");
+			if (ctx->eop_signaling_channel[i].en == VIN_EN) {
+				if (ctx->eop_signaling_channel[i].i1 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti1=%s\n", vin_signal_str(ctx->eop_signaling_channel[i].i1));
+				if (ctx->eop_signaling_channel[i].i2 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti2=%s\n", vin_signal_str(ctx->eop_signaling_channel[i].i2));
+				vin_message_stack_printf(ctx, "\t\tDTMF Receiver: %s\n", (ctx->eop_dtmf_receiver[i].en == VIN_EN)?"enabled":"disabled");
+				if (ctx->eop_dtmf_receiver[i].en == VIN_EN) {
+					vin_message_stack_printf(ctx, "\t\t\tET: %u\n", ctx->eop_dtmf_receiver[i].et);
+					vin_message_stack_printf(ctx, "\t\t\tIS: %u\n", ctx->eop_dtmf_receiver[i].is);
+					vin_message_stack_printf(ctx, "\t\t\tAS: %u\n", ctx->eop_dtmf_receiver[i].as);
+					vin_message_stack_printf(ctx, "\t\t\tDTRNR: %u\n", ctx->eop_dtmf_receiver[i].dtrnr);
+				}
+			}
+		}
+	}
+
+#if 0
+	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
+	struct vin_eop_utg eop_utg[4];
+	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
+
+	struct vin_eop_coder_configuration_rtp_support eop_coder_configuration_rtp_support;
+	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
+	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
+#endif
+	// Coder Module
+	vin_message_stack_printf(ctx, "Coder Module: %s\n", (ctx->eop_coder_control.en == VIN_EN)?"enabled":"disabled");
+	if (ctx->eop_coder_control.en == VIN_EN) {
+		// channels
+		for (i = 0; i < 4; i++) {
+			vin_message_stack_printf(ctx, "\tChannel[%lu]: %s\n", (unsigned long int)i, (ctx->eop_coder_channel_speech_compression[i].en == VIN_EN)?"enabled":"disabled");
+			if (ctx->eop_coder_channel_speech_compression[i].en == VIN_EN) {
+				vin_message_stack_printf(ctx, "\t\tgain1=%2.2f\n", vin_gainem_to_gaindb(ctx->eop_coder_channel_speech_compression[i].gain1));
+				vin_message_stack_printf(ctx, "\t\tgain2=%2.2f\n", vin_gainem_to_gaindb(ctx->eop_coder_channel_speech_compression[i].gain2));
+				if (ctx->eop_coder_channel_speech_compression[i].i1 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti1=%s\n", vin_signal_str(ctx->eop_coder_channel_speech_compression[i].i1));
+				if (ctx->eop_coder_channel_speech_compression[i].i2 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti2=%s\n", vin_signal_str(ctx->eop_coder_channel_speech_compression[i].i2));
+				if (ctx->eop_coder_channel_speech_compression[i].i3 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti3=%s\n", vin_signal_str(ctx->eop_coder_channel_speech_compression[i].i3));
+				if (ctx->eop_coder_channel_speech_compression[i].i4 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti4=%s\n", vin_signal_str(ctx->eop_coder_channel_speech_compression[i].i4));
+				if (ctx->eop_coder_channel_speech_compression[i].i5 != VIN_SIG_NULL) vin_message_stack_printf(ctx, "\t\ti5=%s\n", vin_signal_str(ctx->eop_coder_channel_speech_compression[i].i5));
+				vin_message_stack_printf(ctx, "\t\tCODNR=%u\n", ctx->eop_coder_channel_speech_compression[i].codnr);
+			}
+		}
+	}
 }
 
 /******************************************************************************/

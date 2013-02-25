@@ -28,7 +28,7 @@ struct vinetic_context {
 
 	char *dev_name;
 
-	char message_stack_buff[4096];
+	char *message_stack_buf;
 	size_t message_stack_len;
 	char *message_stack_ptr;
 	const char *message_stack_out;
@@ -40,7 +40,7 @@ struct vinetic_context {
 	struct vin_eop_ali_control eop_ali_control;
 	struct vin_eop_ali_channel eop_ali_channel[4];
 	struct vin_eop_ali_near_end_lec eop_ali_near_end_lec[4];
-	size_t ali_opmode[4];
+	unsigned int ali_opmode[4];
 
 	struct vin_eop_coder_control eop_coder_control;
 	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
@@ -488,6 +488,16 @@ do { \
 	__res; \
 })
 
+#define vin_signaling_channel_set_input_null(_ctx, _ch, _inp) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	if (_inp == 2) { \
+		__context->eop_signaling_channel[_ch].i2 = VIN_SIG_NULL; \
+	} else { \
+		__context->eop_signaling_channel[_ch].i1 = VIN_SIG_NULL; \
+	} \
+} while (0)
+
 #define vin_signaling_channel_set_input_pcm(_ctx, _ch, _inp, _pcm) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
@@ -508,13 +518,13 @@ do { \
 	} \
 } while (0)
 
-#define vin_signaling_channel_set_input_coder(_ctx, _ch, _inp, _ali) \
+#define vin_signaling_channel_set_input_coder(_ctx, _ch, _inp, _cod) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	if (_inp == 2) { \
-		__context->eop_signaling_channel[_ch].i2 = VIN_SIG_COD_OUT00 + _ali; \
+		__context->eop_signaling_channel[_ch].i2 = VIN_SIG_COD_OUT00 + _cod; \
 	} else { \
-		__context->eop_signaling_channel[_ch].i1 = VIN_SIG_COD_OUT00 + _ali; \
+		__context->eop_signaling_channel[_ch].i1 = VIN_SIG_COD_OUT00 + _cod; \
 	} \
 } while (0)
 
@@ -821,7 +831,7 @@ do { \
 #define vin_coder_channel_set_gain2(_ctx, _ch, _gain2) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
-	__context->eop_coder_channel_speech_compression[_ch].gain1 = _gain2; \
+	__context->eop_coder_channel_speech_compression[_ch].gain2 = _gain2; \
 } while (0)
 
 #define vin_coder_channel_set_input_null(_ctx, _ch, _inp) \
@@ -872,19 +882,19 @@ do { \
 	} \
 } while (0)
 
-#define vin_coder_channel_set_input_coder(_ctx, _ch, _inp, _coder) \
+#define vin_coder_channel_set_input_coder(_ctx, _ch, _inp, _cod) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	if (_inp == 5) { \
-		__context->eop_coder_channel_speech_compression[_ch].i5 = VIN_SIG_COD_OUT00 + _coder; \
+		__context->eop_coder_channel_speech_compression[_ch].i5 = VIN_SIG_COD_OUT00 + _cod; \
 	} else if (_inp == 4) {\
-		__context->eop_coder_channel_speech_compression[_ch].i4 = VIN_SIG_COD_OUT00 + _coder; \
+		__context->eop_coder_channel_speech_compression[_ch].i4 = VIN_SIG_COD_OUT00 + _cod; \
 	} else if (_inp == 3) { \
-		__context->eop_coder_channel_speech_compression[_ch].i3 = VIN_SIG_COD_OUT00 + _coder; \
+		__context->eop_coder_channel_speech_compression[_ch].i3 = VIN_SIG_COD_OUT00 + _cod; \
 	} else if (_inp == 2) { \
-		__context->eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_COD_OUT00 + _coder; \
+		__context->eop_coder_channel_speech_compression[_ch].i2 = VIN_SIG_COD_OUT00 + _cod; \
 	} else { \
-		__context->eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_COD_OUT00 + _coder; \
+		__context->eop_coder_channel_speech_compression[_ch].i1 = VIN_SIG_COD_OUT00 + _cod; \
 	} \
 } while (0)
 
@@ -1545,6 +1555,8 @@ do { \
 		__context->status_mask.sr.srs1_0.bits.hook = 0; \
 	} \
 } while (0)
+
+extern void vin_state_dump(struct vinetic_context *ctx);
 
 #endif //__LIBVINETIC_H__
 
