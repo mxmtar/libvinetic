@@ -35,24 +35,28 @@ struct vinetic_context {
 
 	u_int16_t revision;
 
+	unsigned int ali_opmode[4];
+
 	size_t resources[8]; // shared coder, data pump, pcm, cpt3
 
 	struct vin_eop_ali_control eop_ali_control;
 	struct vin_eop_ali_channel eop_ali_channel[4];
 	struct vin_eop_ali_near_end_lec eop_ali_near_end_lec[4];
-	unsigned int ali_opmode[4];
-
-	struct vin_eop_coder_control eop_coder_control;
-	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
-	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
 
 	struct vin_eop_signaling_control eop_signaling_control;
 	struct vin_eop_signaling_channel eop_signaling_channel[4];
+	struct vin_eop_dtmfat_generator eop_dtmfat_generator[4];
 	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
 	struct vin_eop_utg eop_utg[4];
-	struct vin_eop_coder_configuration_rtp_support eop_coder_configuration_rtp_support;
 	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
 
+	struct vin_eop_coder_control eop_coder_control;
+	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
+	struct vin_eop_coder_configuration_rtp_support eop_coder_configuration_rtp_support;
+	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
+
+	struct vin_eop_dtmfat_generator_coefficients eop_dtmfat_generator_coefficients[4];
+	struct vin_eop_dtmfat_generator_data eop_dtmfat_generator_data[4];
 	struct vin_eop_utg_coefficients eop_utg_coefficients[4];
 
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
@@ -70,6 +74,7 @@ struct vinetic_context {
 };
 
 extern void vin_init(struct vinetic_context *ctx, const char *fmt, ...);
+extern void vin_destroy(struct vinetic_context *ctx);
 extern int vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...);
 extern int vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...);
 extern int vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...);
@@ -208,7 +213,7 @@ extern int vin_ali_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_ali_enabled(_ctx) \
+#define vin_is_ali_enabled(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -218,7 +223,7 @@ extern int vin_ali_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_ali_used(_ctx) \
+#define vin_is_ali_used(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	size_t __i; \
@@ -261,7 +266,7 @@ do { \
 	} \
 } while (0)
 
-#define is_vin_ali_channel_enabled(_ctx, _ch) \
+#define vin_is_ali_channel_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -353,7 +358,7 @@ extern int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int ch);
 	__res; \
 })
 
-#define is_vin_ali_near_end_lec_enabled(_ctx, _ch) \
+#define vin_is_ali_near_end_lec_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -414,7 +419,7 @@ extern int vin_signaling_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_signaling_enabled(_ctx) \
+#define vin_is_signaling_enabled(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -424,7 +429,7 @@ extern int vin_signaling_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_signaling_used(_ctx) \
+#define vin_is_signaling_used(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	size_t __i; \
@@ -438,7 +443,7 @@ extern int vin_signaling_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define get_vin_signaling_channel(_ctx) \
+#define vin_get_signaling_channel(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	size_t __i; \
@@ -448,6 +453,16 @@ extern int vin_signaling_control(struct vinetic_context *ctx);
 			__res = (int)__i; \
 			break; \
 		} \
+	} \
+	__res; \
+})
+
+#define vin_get_signaling_channel_by_number(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res = -1; \
+	if ((_ch >= 0) && (_ch <= 3) && (__context->eop_signaling_channel[_ch].en == VIN_DIS)) { \
+		__res = (int)_ch; \
 	} \
 	__res; \
 })
@@ -479,7 +494,7 @@ do { \
 	} \
 } while (0)
 
-#define is_vin_signaling_channel_enabled(_ctx, _ch) \
+#define vin_is_signaling_channel_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -528,14 +543,82 @@ do { \
 	} \
 } while (0)
 
-extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
+extern int vin_dtmfat_generator(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_dtmfat_generator_enable(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].en = VIN_EN; \
+	__context->eop_dtmfat_generator[_ch].gennr = _ch; \
+	int __res = vin_dtmfat_generator(_ctx, VIN_WRITE, _ch); \
+	if (__res < 0) { \
+		__context->eop_dtmfat_generator[_ch].en = VIN_DIS; \
+	} \
+	__res; \
+})
+
+#define vin_dtmfat_generator_disable(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].en = VIN_DIS; \
+	int __res = vin_dtmfat_generator(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_is_dtmfat_generator_enabled(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res = 0; \
+	if ((_ch >= 0) && (__context->eop_dtmfat_generator[_ch].en == VIN_EN)) { \
+		__res = 1; \
+	} \
+	__res; \
+})
+
+#define vin_dtmfat_generator_set_et(_ctx, _ch, _et) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].et = _et; \
+} while (0)
+
+#define vin_dtmfat_generator_set_ad(_ctx, _ch, _ad) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].ad = _ad; \
+} while (0)
+
+#define vin_dtmfat_generator_set_md(_ctx, _ch, _md) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].md = _md; \
+} while (0)
+
+#define vin_dtmfat_generator_set_fg(_ctx, _ch, _fg) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].fg = _fg; \
+} while (0)
+
+#define vin_dtmfat_generator_set_add_1(_ctx, _ch, _add_1) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].add_1 = _add_1; \
+} while (0)
+
+#define vin_dtmfat_generator_set_add_2(_ctx, _ch, _add_2) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	__context->eop_dtmfat_generator[_ch].add_2 = _add_2; \
+} while (0)
+
+extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
 #define vin_dtmf_receiver_enable(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	__context->eop_dtmf_receiver[_ch].en = VIN_EN; \
 	__context->eop_dtmf_receiver[_ch].dtrnr = _ch; \
-	int __res = vin_dtmf_receiver(_ctx, _ch); \
+	int __res = vin_dtmf_receiver(_ctx, VIN_WRITE, _ch); \
 	if (__res < 0) { \
 		__context->eop_dtmf_receiver[_ch].en = VIN_DIS; \
 	} \
@@ -546,11 +629,11 @@ extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	__context->eop_dtmf_receiver[_ch].en = VIN_DIS; \
-	int __res = vin_dtmf_receiver(_ctx, _ch); \
+	int __res = vin_dtmf_receiver(_ctx, VIN_WRITE, _ch); \
 	__res; \
 })
 
-#define is_vin_dtmf_receiver_enabled(_ctx, _ch) \
+#define vin_is_dtmf_receiver_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -560,10 +643,10 @@ extern int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch);
 	__res; \
 })
 
-#define vin_dtmf_receiver_set_as(_ctx, _ch, _as) \
+#define vin_dtmf_receiver_set_et(_ctx, _ch, _et) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
-	__context->eop_dtmf_receiver[_ch].as = _as; \
+	__context->eop_dtmf_receiver[_ch].et = _et; \
 } while (0)
 
 #define vin_dtmf_receiver_set_is(_ctx, _ch, _is) \
@@ -572,10 +655,10 @@ do { \
 	__context->eop_dtmf_receiver[_ch].is = _is; \
 } while (0)
 
-#define vin_dtmf_receiver_set_et(_ctx, _ch, _et) \
+#define vin_dtmf_receiver_set_as(_ctx, _ch, _as) \
 do { \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
-	__context->eop_dtmf_receiver[_ch].et = _et; \
+	__context->eop_dtmf_receiver[_ch].as = _as; \
 } while (0)
 
 extern int vin_utg(struct vinetic_context *ctx, unsigned int ch);
@@ -600,7 +683,7 @@ extern int vin_utg(struct vinetic_context *ctx, unsigned int ch);
 	__res; \
 })
 
-#define is_vin_utg_enabled(_ctx, _ch) \
+#define vin_is_utg_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -683,7 +766,7 @@ extern int vin_coder_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_coder_enabled(_ctx) \
+#define vin_is_coder_enabled(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -693,7 +776,7 @@ extern int vin_coder_control(struct vinetic_context *ctx);
 	__res; \
 })
 
-#define is_vin_coder_used(_ctx) \
+#define vin_is_coder_used(_ctx) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	size_t __i; \
@@ -746,7 +829,7 @@ do { \
 	} \
 } while (0)
 
-#define is_vin_coder_channel_enabled(_ctx, _ch) \
+#define vin_is_coder_channel_enabled(_ctx, _ch) \
 ({ \
 	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
 	int __res = 0; \
@@ -970,9 +1053,52 @@ do { \
 
 extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 
-extern int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+extern int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_dtmfat_generator_coefficients_write(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res; \
+	__res = vin_dtmfat_generator_coefficients(__context, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_dtmfat_generator_coefficients_read(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res; \
+	__res = vin_dtmfat_generator_coefficients(__context, VIN_READ, _ch); \
+	__res; \
+})
+
+extern int vin_dtmfat_generator_data(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_dtmfat_generator_data_write(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res; \
+	__res = vin_dtmfat_generator_data(__context, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_dtmfat_generator_data_read(_ctx, _ch) \
+({ \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	int __res; \
+	__res = vin_dtmfat_generator_data(__context, VIN_READ, _ch); \
+	__res; \
+})
+
+#define vin_dtmfat_generator_data_set_dtc(_ctx, _ch, _dtc) \
+do { \
+	struct vinetic_context *__context = (struct vinetic_context *)_ctx; \
+	memset(__context->eop_dtmfat_generator_data[_ch].dtc, 0, sizeof(__context->eop_dtmfat_generator_data[_ch].dtc)); \
+	__context->eop_dtmfat_generator_data[_ch].dtc[0] = _dtc; \
+} while (0)
+
 
 extern int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int ch, const char *tone);
+extern int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
 #define vin_utg_coefficients_write(_ctx, _ch) \
 ({ \

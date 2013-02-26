@@ -171,6 +171,11 @@ void vin_init(struct vinetic_context *ctx, const char *fmt, ...)
 	vin_message_stack_init(ctx);
 }
 
+void vin_destroy(struct vinetic_context *ctx)
+{
+	vin_message_stack_init(ctx); // free message buffer
+}
+
 int vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
 {
 	int res;
@@ -1784,11 +1789,45 @@ vin_signaling_channel_error:
 	return -1;
 }
 
-int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch)
+int vin_dtmfat_generator(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_dtmfat_generator cmd_eop_dtmfat_generator;
+
+	cmd_eop_dtmfat_generator.header.parts.first.bits.rw = rw;
+	cmd_eop_dtmfat_generator.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_dtmfat_generator.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_dtmfat_generator.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_dtmfat_generator.header.parts.first.bits.res = 0;
+	cmd_eop_dtmfat_generator.header.parts.first.bits.chan = ch;
+	cmd_eop_dtmfat_generator.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_dtmfat_generator.header.parts.second.eop.bits.ecmd  = VIN_EOP_DTMFATGEN;
+	cmd_eop_dtmfat_generator.header.parts.second.eop.bits.length = sizeof(struct vin_eop_dtmfat_generator) / 2;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_dtmfat_generator.eop_dtmfat_generator, &ctx->eop_dtmfat_generator[ch], sizeof(struct vin_eop_dtmfat_generator));
+		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator, sizeof(struct vin_cmd_eop_dtmfat_generator)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_dtmfat_generator.header, &cmd_eop_dtmfat_generator, sizeof(struct vin_cmd_eop_dtmfat_generator)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_error;
+		}
+		memcpy(&ctx->eop_dtmfat_generator[ch], &cmd_eop_dtmfat_generator.eop_dtmfat_generator, sizeof(struct vin_eop_dtmfat_generator));
+	}
+
+	return 0;
+
+vin_dtmfat_generator_error:
+	return -1;
+}
+
+int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
 {
 	struct vin_cmd_eop_dtmf_receiver cmd_eop_dtmf_receiver;
 
-	cmd_eop_dtmf_receiver.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_dtmf_receiver.header.parts.first.bits.rw = rw;
 	cmd_eop_dtmf_receiver.header.parts.first.bits.sc = VIN_SC_NO;
 	cmd_eop_dtmf_receiver.header.parts.first.bits.bc = VIN_BC_NO;
 	cmd_eop_dtmf_receiver.header.parts.first.bits.cmd = VIN_CMD_EOP;
@@ -1797,11 +1836,21 @@ int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int ch)
 	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
 	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.ecmd  = VIN_EOP_DTMFREC;
 	cmd_eop_dtmf_receiver.header.parts.second.eop.bits.length = sizeof(struct vin_eop_dtmf_receiver) / 2;
-	memcpy(&cmd_eop_dtmf_receiver.eop_dtmf_receiver, &ctx->eop_dtmf_receiver[ch], sizeof(struct vin_eop_dtmf_receiver));
-	if (vin_write(ctx, 1, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
-		goto vin_dtmf_receiver_error;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_dtmf_receiver.eop_dtmf_receiver, &ctx->eop_dtmf_receiver[ch], sizeof(struct vin_eop_dtmf_receiver));
+		if (vin_write(ctx, 1, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmf_receiver_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_dtmf_receiver.header, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmf_receiver_error;
+		}
+		memcpy(&ctx->eop_dtmf_receiver[ch], &cmd_eop_dtmf_receiver.eop_dtmf_receiver, sizeof(struct vin_eop_dtmf_receiver));
 	}
+
 	return 0;
 
 vin_dtmf_receiver_error:
@@ -1980,6 +2029,74 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	return 0;
 
 vin_coder_channel_jb_statistic_reset_error:
+	return -1;
+}
+
+int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_dtmfat_generator_coefficients cmd_eop_dtmfat_generator_coefficients;
+
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.rw = rw;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.res = 0;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.first.bits.chan = ch;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.second.eop.bits.ecmd  = VIN_EOP_DTMFATCOEFF;
+	cmd_eop_dtmfat_generator_coefficients.header.parts.second.eop.bits.length = sizeof(struct vin_eop_dtmfat_generator_coefficients) / 2;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_dtmfat_generator_coefficients.eop_dtmfat_generator_coefficients, &ctx->eop_dtmfat_generator_coefficients[ch], sizeof(struct vin_eop_dtmfat_generator_coefficients));
+		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator_coefficients, sizeof(struct vin_cmd_eop_dtmfat_generator_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_coefficients_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_dtmfat_generator_coefficients.header, &cmd_eop_dtmfat_generator_coefficients, sizeof(struct vin_cmd_eop_dtmfat_generator_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_coefficients_error;
+		}
+		memcpy(&ctx->eop_dtmfat_generator_coefficients[ch], &cmd_eop_dtmfat_generator_coefficients.eop_dtmfat_generator_coefficients, sizeof(struct vin_eop_dtmfat_generator_coefficients));
+	}
+
+	return 0;
+
+vin_dtmfat_generator_coefficients_error:
+	return -1;
+}
+
+int vin_dtmfat_generator_data(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_dtmfat_generator_data cmd_eop_dtmfat_generator_data;
+
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.rw = rw;
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.res = 0;
+	cmd_eop_dtmfat_generator_data.header.parts.first.bits.chan = ch;
+	cmd_eop_dtmfat_generator_data.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
+	cmd_eop_dtmfat_generator_data.header.parts.second.eop.bits.ecmd  = VIN_EOP_DTM_AT_GEN_DATA;
+	cmd_eop_dtmfat_generator_data.header.parts.second.eop.bits.length = sizeof(struct vin_eop_dtmfat_generator_data) / 2;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_dtmfat_generator_data.eop_dtmfat_generator_data, &ctx->eop_dtmfat_generator_data[ch], sizeof(struct vin_eop_dtmfat_generator_data));
+		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator_data, sizeof(struct vin_cmd_eop_dtmfat_generator_data)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_data_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_dtmfat_generator_data.header, &cmd_eop_dtmfat_generator_data, sizeof(struct vin_cmd_eop_dtmfat_generator_data)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_dtmfat_generator_data_error;
+		}
+		memcpy(&ctx->eop_dtmfat_generator_data[ch], &cmd_eop_dtmfat_generator_data.eop_dtmfat_generator_data, sizeof(struct vin_eop_dtmfat_generator_data));
+	}
+
+	return 0;
+
+vin_dtmfat_generator_data_error:
 	return -1;
 }
 
@@ -2244,8 +2361,8 @@ int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int ch, cons
 	vin_utg_coefficients_set_msk_6_rep(ctx, ch, ((masks[5].repetition > 7)?7:masks[5].repetition));
 	vin_utg_coefficients_set_msk_6_sa(ctx, ch, ((count == 6)?masks[5].stop:0));
 	// write UTG coefficients
-	if (vin_utg_coefficients_write(ctx, ch) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_utg_coefficients_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+	if (vin_utg_coefficients(ctx, VIN_WRITE, ch) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_utg_coefficients() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_utg_set_asterisk_tone_error;
 	}
 
