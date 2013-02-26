@@ -612,7 +612,7 @@ extern int vin_coder_channel_speech_compression(struct vinetic_context *ctx, uns
 
 #define vin_coder_channel_set_gain2(_ctx, _ch, _gain2) \
 	do { \
-		_ctx.eop_coder_channel_speech_compression[_ch].gain1 = _gain2; \
+		_ctx.eop_coder_channel_speech_compression[_ch].gain2 = _gain2; \
 	} while (0)
 
 #define vin_coder_channel_set_input_ali(_ctx, _ch, _inp, _ali) \
