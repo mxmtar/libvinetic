@@ -650,9 +650,14 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre2_0.full) {
-		;
+		// dec_chg
+		if (status_changed.sr.sre2_0.bits.dec_chg && ctx->status.sr.sre2_0.bits.dec_chg && ctx->vin_dsc_handler[0].handler && ctx->vin_dsc_handler[0].data) {
+			vin_coder_channel_decoder_status_read(ctx, 0);
+			ctx->vin_dsc_handler[0].handler(ctx->vin_dsc_handler[0].data, ctx->eop_coder_channel_decoder_status[0].dec, ctx->eop_coder_channel_decoder_status[0].ptd);
+		}
 	}
 	if (status_changed.sr.srs1_0.full) {
+		// hook
 		if (status_changed.sr.srs1_0.bits.hook && ctx->vin_hook_handler[0].handler && ctx->vin_hook_handler[0].data) {
 			ctx->vin_hook_handler[0].handler(ctx->vin_hook_handler[0].data, ctx->status.sr.srs1_0.bits.hook);
 		}
@@ -664,9 +669,14 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre2_1.full) {
-		;
+		// dec_chg
+		if (status_changed.sr.sre2_1.bits.dec_chg && ctx->status.sr.sre2_1.bits.dec_chg && ctx->vin_dsc_handler[1].handler && ctx->vin_dsc_handler[1].data) {
+			vin_coder_channel_decoder_status_read(ctx, 1);
+			ctx->vin_dsc_handler[1].handler(ctx->vin_dsc_handler[1].data, ctx->eop_coder_channel_decoder_status[1].dec, ctx->eop_coder_channel_decoder_status[1].ptd);
+		}
 	}
 	if (status_changed.sr.srs1_1.full) {
+		// hook
 		if (status_changed.sr.srs1_1.bits.hook && ctx->vin_hook_handler[1].handler && ctx->vin_hook_handler[1].data) {
 			ctx->vin_hook_handler[1].handler(ctx->vin_hook_handler[1].data, ctx->status.sr.srs1_1.bits.hook);
 		}
@@ -678,9 +688,14 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre2_2.full) {
-		;
+		// dec_chg
+		if (status_changed.sr.sre2_2.bits.dec_chg && ctx->status.sr.sre2_2.bits.dec_chg && ctx->vin_dsc_handler[2].handler && ctx->vin_dsc_handler[2].data) {
+			vin_coder_channel_decoder_status_read(ctx, 2);
+			ctx->vin_dsc_handler[2].handler(ctx->vin_dsc_handler[2].data, ctx->eop_coder_channel_decoder_status[2].dec, ctx->eop_coder_channel_decoder_status[2].ptd);
+		}
 	}
 	if (status_changed.sr.srs1_2.full) {
+		// hook
 		if (status_changed.sr.srs1_2.bits.hook && ctx->vin_hook_handler[2].handler && ctx->vin_hook_handler[2].data) {
 			ctx->vin_hook_handler[2].handler(ctx->vin_hook_handler[2].data, ctx->status.sr.srs1_2.bits.hook);
 		}
@@ -692,9 +707,14 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre2_3.full) {
-		;
+		// dec_chg
+		if (status_changed.sr.sre2_3.bits.dec_chg && ctx->status.sr.sre2_3.bits.dec_chg && ctx->vin_dsc_handler[3].handler && ctx->vin_dsc_handler[3].data) {
+			vin_coder_channel_decoder_status_read(ctx, 3);
+			ctx->vin_dsc_handler[3].handler(ctx->vin_dsc_handler[3].data, ctx->eop_coder_channel_decoder_status[3].dec, ctx->eop_coder_channel_decoder_status[3].ptd);
+		}
 	}
 	if (status_changed.sr.srs1_3.full) {
+		// hook
 		if (status_changed.sr.srs1_3.bits.hook && ctx->vin_hook_handler[3].handler && ctx->vin_hook_handler[3].data) {
 			ctx->vin_hook_handler[3].handler(ctx->vin_hook_handler[3].data, ctx->status.sr.srs1_3.bits.hook);
 		}
@@ -2151,7 +2171,7 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	cmd.parts.first.bits.res = 0;
 	cmd.parts.first.bits.chan = chan & 0x7;
 	cmd.parts.second.eop.bits.mod = VIN_MOD_CODER;
-	cmd.parts.second.eop.bits.ecmd  = VIN_EOP_CODER_JBSTAT;
+	cmd.parts.second.eop.bits.ecmd = VIN_EOP_CODER_JBSTAT;
 	cmd.parts.second.eop.bits.length = 0;
 	if (vin_write(ctx, 1, &cmd, sizeof(union vin_cmd)) < 0) {
 		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
@@ -2160,6 +2180,39 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	return 0;
 
 vin_coder_channel_jb_statistic_reset_error:
+	return -1;
+}
+
+int vin_coder_channel_decoder_status(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_coder_channel_decoder_status cmd_eop_coder_channel_decoder_status;
+
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.rw = rw;
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.res = 0;
+	cmd_eop_coder_channel_decoder_status.header.parts.first.bits.chan = ch & 0x7;
+	cmd_eop_coder_channel_decoder_status.header.parts.second.eop.bits.mod = VIN_MOD_CODER;
+	cmd_eop_coder_channel_decoder_status.header.parts.second.eop.bits.ecmd = VIN_EOP_DECCODER_STATUS;
+	cmd_eop_coder_channel_decoder_status.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_channel_decoder_status) / 2;
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_coder_channel_decoder_status.eop_coder_channel_decoder_status, &ctx->eop_coder_channel_decoder_status[ch], sizeof(struct vin_eop_coder_channel_decoder_status));
+		if (vin_write(ctx, 1, &cmd_eop_coder_channel_decoder_status, sizeof(struct vin_cmd_eop_coder_channel_decoder_status)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_coder_channel_decoder_status_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_coder_channel_decoder_status.header, &cmd_eop_coder_channel_decoder_status, sizeof(struct vin_cmd_eop_coder_channel_decoder_status)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_coder_channel_decoder_status_error;
+		}
+		memcpy(&ctx->eop_coder_channel_decoder_status[ch], &cmd_eop_coder_channel_decoder_status.eop_coder_channel_decoder_status, sizeof(struct vin_eop_coder_channel_decoder_status));
+	}
+
+	return 0;
+
+vin_coder_channel_decoder_status_error:
 	return -1;
 }
 
@@ -2662,6 +2715,27 @@ const char *vin_signal_str(unsigned int sig)
 		case VIN_SIG_SIG_OUTB2: return "sigb2";
 		case VIN_SIG_SIG_OUTA3: return "siga3";
 		case VIN_SIG_SIG_OUTB3: return "sigb3";
+		default: return "unknown";
+	}
+}
+
+const char *vin_decoder_str(unsigned int dec)
+{
+	switch (dec) {
+		case VIN_DEC_NO: return "No decoder is running";
+		case VIN_DEC_G711_ALAW: return "G.711, 64 kbit/s, A-Law";
+		case VIN_DEC_G711_MLAW: return "G.711, 64 kbit/s, u-Law";
+		case VIN_DEC_G726_16: return "G.726, 16 kbit/s";
+		case VIN_DEC_G726_24: return "G.726, 24 kbit/s";
+		case VIN_DEC_G726_32: return "G.726, 32 kbit/s";
+		case VIN_DEC_G726_40: return "G.726, 40 kbit/s";
+		case VIN_DEC_G728_16: return "G.728, 16 kbit/s";
+		case VIN_DEC_G729AB_8: return "G.729A,B, 8 kbit/s";
+		case VIN_DEC_G729E_11_8: return "G.729E, 11.8 kbit/s";
+		case VIN_DEC_ILBC_15_2: return "iLBC, 15.2 kB/s";
+		case VIN_DEC_ILBS_13_3: return "iLBC, 13.3 kB/s";
+		case VIN_DEC_G7231_5_3: return "G.723.1, 5.3 kbit/s";
+		case VIN_DEC_G7231_6_3: return "G.723.1, 6.3 kbit/s";
 		default: return "unknown";
 	}
 }

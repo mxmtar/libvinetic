@@ -58,6 +58,7 @@ struct vinetic_context {
 	struct vin_eop_coder_channel_speech_compression eop_coder_channel_speech_compression[4];
 	struct vin_eop_coder_configuration_rtp_support eop_coder_configuration_rtp_support;
 	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
+	struct vin_eop_coder_channel_decoder_status eop_coder_channel_decoder_status[4];
 
 	struct vin_eop_dtmfat_generator_coefficients eop_dtmfat_generator_coefficients[4];
 	struct vin_eop_dtmfat_generator_data eop_dtmfat_generator_data[4];
@@ -69,6 +70,12 @@ struct vinetic_context {
 	struct vin_status_registers status;
 	struct vin_status_registers status_old;
 	struct vin_status_registers status_mask;
+
+	// dsc (decoder status change) handlers
+	struct vinetic_dsc_handler {
+		void *data;
+		void (* handler)(void *data, unsigned int dec, unsigned int pt);
+	} vin_dsc_handler[4];
 
 	// hook handlers
 	struct vinetic_hook_handler {
@@ -113,6 +120,9 @@ extern const char *vin_message_stack_get_line(struct vinetic_context *ctx);
 #define VIN_REV_14 0x2484
 extern char *vin_revision_str(struct vinetic_context *ctx);
 
+extern const char *vin_ali_channel_om_str(unsigned int om);
+extern const char *vin_signal_str(unsigned int sig);
+extern const char *vin_decoder_str(unsigned int dec);
 
 extern int vin_read_fw_version(struct vinetic_context *ctx);
 
@@ -1329,6 +1339,22 @@ do { \
 
 extern int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned int chan);
 
+int vin_coder_channel_decoder_status(struct vinetic_context *ctx, unsigned int rw, unsigned int chan);
+
+#define vin_coder_channel_decoder_status_write(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_coder_channel_decoder_status(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_coder_channel_decoder_status_read(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_coder_channel_decoder_status(_ctx, VIN_READ, _ch); \
+	__res; \
+})
+
 extern int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
 #define vin_dtmfat_generator_coefficients_write(_ctx, _ch) \
@@ -1834,6 +1860,37 @@ extern int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int c
 
 extern double vin_gainem_to_gaindb(u_int8_t em);
 extern u_int8_t vin_gaindb_to_gainem(double g);
+
+#define vin_set_dsc_handler(_ctx, _ch, _handler, _data) \
+do { \
+	vin_coder_channel_decoder_status_read(_ctx, _ch); \
+	(_ctx)->vin_dsc_handler[_ch].handler = _handler; \
+	(_ctx)->vin_dsc_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre2_3.bits.dec_chg = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre2_2.bits.dec_chg = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre2_1.bits.dec_chg = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre2_0.bits.dec_chg = 1; \
+	} \
+} while (0)
+
+#define vin_reset_dsc_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_dsc_handler[_ch].handler = NULL; \
+	(_ctx)->vin_dsc_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre2_3.bits.dec_chg = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre2_2.bits.dec_chg = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre2_1.bits.dec_chg = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre2_0.bits.dec_chg = 0; \
+	} \
+} while (0)
 
 #define vin_set_hook_handler(_ctx, _ch, _handler, _data) \
 do { \
