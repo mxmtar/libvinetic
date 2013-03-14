@@ -187,7 +187,7 @@ int vin_set_pram(struct vinetic_context *ctx, const char *fmt, ...)
 	va_end(ap);
 
 	if ((res = stat(ctx->pram_path, &buf)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->pram_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->pram_path, strerror(errno));
 	}
 
 	return res;
@@ -204,7 +204,7 @@ int vin_set_dram(struct vinetic_context *ctx, const char *fmt, ...)
 	va_end(ap);
 
 	if ((res = stat(ctx->dram_path, &buf)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->dram_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->dram_path, strerror(errno));
 	}
 
 	return res;
@@ -221,7 +221,7 @@ int vin_set_alm_dsp_ab(struct vinetic_context *ctx, const char *fmt, ...)
 	va_end(ap);
 
 	if ((res = stat(ctx->alm_dsp_ab_path, &buf)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->alm_dsp_ab_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->alm_dsp_ab_path, strerror(errno));
 	}
 
 	return res;
@@ -238,7 +238,7 @@ int vin_set_alm_dsp_cd(struct vinetic_context *ctx, const char *fmt, ...)
 	va_end(ap);
 
 	if ((res = stat(ctx->alm_dsp_cd_path, &buf)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->alm_dsp_cd_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->alm_dsp_cd_path, strerror(errno));
 	}
 
 	return res;
@@ -255,7 +255,7 @@ int vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...)
 	va_end(ap);
 
 	if ((res = stat(ctx->cram_path, &buf)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->cram_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() stat(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->cram_path, strerror(errno));
 	}
 
 	return res;
@@ -264,7 +264,7 @@ int vin_set_cram(struct vinetic_context *ctx, const char *fmt, ...)
 int vin_open(struct vinetic_context *ctx)
 {
 	if ((ctx->dev_fd = open(ctx->dev_path, O_RDWR)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s open(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->dev_path, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() open(%s) failed: %s", __LINE__, __PRETTY_FUNCTION__, ctx->dev_path, strerror(errno));
 	}
 	return ctx->dev_fd;
 }
@@ -280,7 +280,7 @@ int vin_reset(struct vinetic_context *ctx)
 	int res;
 
 	if ((res = ioctl(ctx->dev_fd, VINETIC_RESET, NULL)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_RESET) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_RESET) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -291,7 +291,7 @@ int vin_reset_rdyq(struct vinetic_context *ctx)
 	int res;
 
 	if ((res = ioctl(ctx->dev_fd, VINETIC_RESET_RDYQ, NULL)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_RESET_RDYQ) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_RESET_RDYQ) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -301,7 +301,7 @@ int vin_flush_mbox(struct vinetic_context *ctx)
 {
 	int res;
 	if ((res = ioctl(ctx->dev_fd, VINETIC_FLUSH_MBOX, NULL)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_FLUSH_MBOX) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_FLUSH_MBOX) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -311,7 +311,7 @@ int vin_is_not_ready(struct vinetic_context *ctx)
 {
 	int not_ready;
 	if (ioctl(ctx->dev_fd, VINETIC_GET_NOT_READY, &not_ready) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_GET_NOT_READY) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_GET_NOT_READY) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		not_ready = -1;
 	}
 	return not_ready;
@@ -321,7 +321,7 @@ u_int16_t vin_read_dia(struct vinetic_context *ctx)
 {
 	u_int16_t dia;
 	if (ioctl(ctx->dev_fd, VINETIC_READ_DIA, &dia) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_READ_DIA) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_READ_DIA) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		dia = 0xffff;
 	}
 	return dia;
@@ -335,7 +335,7 @@ int vin_resync(struct vinetic_context *ctx)
 	// Re-SYNChronize PCM clock
 	cmd_short.full = VIN_wRESYNC;
 	if ((res = vin_write(ctx, 0, &cmd_short.full, sizeof(union vin_cmd_short))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -357,12 +357,12 @@ int vin_cerr_acknowledge(struct vinetic_context *ctx)
 	cmd.parts.second.eop.bits.ecmd  = VIN_EOP_CERR_ACK;
 	cmd.parts.second.eop.bits.length = 0;
 	if ((lsres = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (int)lsres;
 		goto vin_cerr_acknowledge_end;
 	}
 	if ((res = write(ctx->dev_fd, &cmd.full, 0)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_cerr_acknowledge_end;
 	}
 
@@ -375,7 +375,7 @@ int vin_poll_set(struct vinetic_context *ctx, int poll)
 	int res;
 	
 	if ((res = ioctl(ctx->dev_fd, VINETIC_SET_POLL, &poll)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_SET_POLL, %d) failed: %s", __LINE__, __PRETTY_FUNCTION__, poll, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_SET_POLL, %d) failed: %s", __LINE__, __PRETTY_FUNCTION__, poll, strerror(errno));
 	}
 
 	return res;
@@ -411,7 +411,7 @@ int vin_reset_status(struct vinetic_context *ctx)
 	int res;
 
 	if ((res = ioctl(ctx->dev_fd, VINETIC_RESET_STATUS, NULL)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd,ctx->dev_fd, VINETIC_RESET_STATUS, NULL) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd,ctx->dev_fd, VINETIC_RESET_STATUS, NULL) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -429,7 +429,7 @@ ssize_t vin_write(struct vinetic_context *ctx, size_t track_err, const void *buf
 
 	cmd.full = 0;
 	if (count < 2) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s count=%lu to short", __LINE__, __PRETTY_FUNCTION__, (unsigned long int)count);
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() count=%lu to short", __LINE__, __PRETTY_FUNCTION__, (unsigned long int)count);
 		res = -EINVAL;
 		goto vin_write_end;
 	} else if (count == 2) {
@@ -442,49 +442,14 @@ ssize_t vin_write(struct vinetic_context *ctx, size_t track_err, const void *buf
 		memcpy(&cmd.full, data, 4);
 		length = count - 4;
 	}
-#if 0
-	// check mailbox status
-	auxcmd.full = 0;
-	auxcmd.parts.first.full = VIN_rBXSR;
-	if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
-		ctx->errorline = __LINE__ - 1;
-		ctx->error = errno;
-		rc = (ssize_t)lsrc;
-		goto vin_write_end;
-	}
-	if ((rc = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
-		ctx->errorline = __LINE__ - 1;
-		ctx->error = errno;
-		goto vin_write_end;
-	}
-
-	if (bxsr.bxsr2.bits.host_err || bxsr.bxsr2.bits.pibx_of || bxsr.bxsr2.bits.cibx_of) {
-		// acknowledge error
-		auxcmd.full = 0;
-		auxcmd.parts.first.full = VIN_wPHIERR;
-		if ((lsrc = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
-			ctx->errorline = __LINE__ - 1;
-			ctx->error = errno;
-			rc = (ssize_t)lsrc;
-			goto vin_write_end;
-		}
-		if ((rc = write(ctx->dev_fd, &auxcmd.full, 0)) < 0) {
-			ctx->errorline = __LINE__ - 1;
-			ctx->error = errno;
-			goto vin_write_end;
-		}
-		// wait for recovery
-		usleep(500);
-	}
-#endif
 	// base write command
 	if ((lsres = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_write_end;
 	}
 	if ((res = write(ctx->dev_fd, data+4, length)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_write_end;
 	}
 	if (track_err) {
@@ -494,23 +459,20 @@ ssize_t vin_write(struct vinetic_context *ctx, size_t track_err, const void *buf
 	auxcmd.full = 0;
 	auxcmd.parts.first.full = VIN_rBXSR;
 	if ((lsres = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_write_end;
 	}
 	if ((res = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_write_end;
 	}
 	if (bxsr.bxsr1.bits.cerr) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s cerr=1", __LINE__, __PRETTY_FUNCTION__);
-#if 0
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() cerr=1", __LINE__, __PRETTY_FUNCTION__);
+		errno = ENOMSG;
 		if (vin_cerr_acknowledge(ctx) < 0) {
-			ctx->errorline = __LINE__ - 1;
-			ctx->error = errno;
-			goto vin_write_end;
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_cerr_acknowledge() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		}
-#endif
 		res = -1;
 		goto vin_write_end;
 	}
@@ -530,12 +492,12 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 	auxcmd.full = 0;
 	auxcmd.parts.first.full = VIN_rBXSR;
 	if ((lsres = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_read_end;
 	}
 	if ((res = read(ctx->dev_fd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_read_end;
 	}
 
@@ -544,12 +506,12 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 		auxcmd.full = 0;
 		auxcmd.parts.first.full = VIN_wPHIERR;
 		if ((lsres = lseek64(ctx->dev_fd, auxcmd.full, SEEK_SET)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			res = (ssize_t)lsres;
 			goto vin_read_end;
 		}
 		if ((res = write(ctx->dev_fd, &auxcmd.full, 0)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_read_end;
 		}
 		// wait for recovery
@@ -557,12 +519,12 @@ ssize_t vin_read(struct vinetic_context *ctx, union vin_cmd cmd, void *buf, size
 	}
 	// base read command
 	if ((lsres = lseek64(ctx->dev_fd, cmd.full, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_read_end;
 	}
 	if ((res = read(ctx->dev_fd, buf, count)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_read_end;
 	}
 
@@ -577,12 +539,12 @@ ssize_t vin_get_status(struct vinetic_context *ctx)
 
 	// read command
 	if ((lsres = lseek64(ctx->dev_fd, 0xffffffff, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_get_status_end;
 	}
 	if ((res = read(ctx->dev_fd, &ctx->status, sizeof(struct vin_status_registers))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_get_status_end;
 	}
 
@@ -597,12 +559,12 @@ ssize_t vin_set_status_mask(struct vinetic_context *ctx)
 
 	// read command
 	if ((lsres = lseek64(ctx->dev_fd, 0xffffffff, SEEK_SET)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek64() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		res = (ssize_t)lsres;
 		goto vin_set_status_mask_end;
 	}
 	if ((res = write(ctx->dev_fd, &ctx->status_mask, sizeof(struct vin_status_registers))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_set_status_mask_end;
 	}
 
@@ -612,6 +574,9 @@ vin_set_status_mask_end:
 
 void vin_status_monitor(struct vinetic_context *ctx)
 {
+	unsigned char *msg;
+	unsigned int len;
+
 	struct vin_status_registers status_changed;
 
 	// get changes
@@ -647,13 +612,35 @@ void vin_status_monitor(struct vinetic_context *ctx)
 	memcpy(&ctx->status_old, &ctx->status, sizeof(struct vin_status_registers));
 	// handle status changes
 	if (status_changed.sr.sre1_0.full) {
-		;
+		// cis_buf
+		if (status_changed.sr.sre1_0.bits.cis_buf && ctx->vin_cis_buf_handler[0].handler && ctx->vin_cis_buf_handler[0].data) {
+			ctx->vin_cis_buf_handler[0].handler(ctx->vin_cis_buf_handler[0].data, ctx->status.sr.sre1_0.bits.cis_buf);
+		}
+		// cis_req
+		if (status_changed.sr.sre1_0.bits.cis_req && ctx->status.sr.sre1_0.bits.cis_req && ctx->vin_cid_sender_data[0].len) {
+			len = (ctx->vin_cid_sender_data[0].len < 20)?(ctx->vin_cid_sender_data[0].len):(20);
+			msg = ctx->vin_cid_sender_data[0].msg + ctx->vin_cid_sender_data[0].pos;
+			if (vin_cid_sender_data_write(ctx, 0, msg, len) < 0) {
+				ctx->vin_cid_sender_data[0].len = 0;
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_cid_sender_data_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			} else {
+				ctx->vin_cid_sender_data[0].len -= len;
+				ctx->vin_cid_sender_data[0].pos += len;
+			}
+		}
+		if (status_changed.sr.sre1_0.bits.cis_req && ctx->vin_cis_req_handler[0].handler && ctx->vin_cis_req_handler[0].data) {
+			ctx->vin_cis_req_handler[0].handler(ctx->vin_cis_req_handler[0].data, ctx->status.sr.sre1_0.bits.cis_req);
+		}
+		// cis_act
+		if (status_changed.sr.sre1_0.bits.cis_act && ctx->vin_cis_act_handler[0].handler && ctx->vin_cis_act_handler[0].data) {
+			ctx->vin_cis_act_handler[0].handler(ctx->vin_cis_act_handler[0].data, ctx->status.sr.sre1_0.bits.cis_act);
+		}
 	}
 	if (status_changed.sr.sre2_0.full) {
 		// dec_chg
-		if (status_changed.sr.sre2_0.bits.dec_chg && ctx->status.sr.sre2_0.bits.dec_chg && ctx->vin_dsc_handler[0].handler && ctx->vin_dsc_handler[0].data) {
+		if (status_changed.sr.sre2_0.bits.dec_chg && ctx->status.sr.sre2_0.bits.dec_chg && ctx->vin_dec_chg_handler[0].handler && ctx->vin_dec_chg_handler[0].data) {
 			vin_coder_channel_decoder_status_read(ctx, 0);
-			ctx->vin_dsc_handler[0].handler(ctx->vin_dsc_handler[0].data, ctx->eop_coder_channel_decoder_status[0].dec, ctx->eop_coder_channel_decoder_status[0].ptd);
+			ctx->vin_dec_chg_handler[0].handler(ctx->vin_dec_chg_handler[0].data, ctx->eop_coder_channel_decoder_status[0].dec, ctx->eop_coder_channel_decoder_status[0].ptd);
 		}
 	}
 	if (status_changed.sr.srs1_0.full) {
@@ -666,13 +653,35 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre1_1.full) {
-		;
+		// cis_buf
+		if (status_changed.sr.sre1_1.bits.cis_buf && ctx->vin_cis_buf_handler[1].handler && ctx->vin_cis_buf_handler[1].data) {
+			ctx->vin_cis_buf_handler[1].handler(ctx->vin_cis_buf_handler[1].data, ctx->status.sr.sre1_1.bits.cis_buf);
+		}
+		// cis_req
+		if (status_changed.sr.sre1_1.bits.cis_req && ctx->status.sr.sre1_1.bits.cis_req && ctx->vin_cid_sender_data[1].len) {
+			len = (ctx->vin_cid_sender_data[1].len < 20)?(ctx->vin_cid_sender_data[1].len):(20);
+			msg = ctx->vin_cid_sender_data[1].msg + ctx->vin_cid_sender_data[0].pos;
+			if (vin_cid_sender_data_write(ctx, 1, msg, len) < 0) {
+				ctx->vin_cid_sender_data[1].len = 0;
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_cid_sender_data_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			} else {
+				ctx->vin_cid_sender_data[1].len -= len;
+				ctx->vin_cid_sender_data[1].pos += len;
+			}
+		}
+		if (status_changed.sr.sre1_1.bits.cis_req && ctx->vin_cis_req_handler[1].handler && ctx->vin_cis_req_handler[1].data) {
+			ctx->vin_cis_req_handler[1].handler(ctx->vin_cis_req_handler[1].data, ctx->status.sr.sre1_1.bits.cis_req);
+		}
+		// cis_act
+		if (status_changed.sr.sre1_1.bits.cis_act && ctx->vin_cis_act_handler[1].handler && ctx->vin_cis_act_handler[1].data) {
+			ctx->vin_cis_act_handler[1].handler(ctx->vin_cis_act_handler[1].data, ctx->status.sr.sre1_1.bits.cis_act);
+		}
 	}
 	if (status_changed.sr.sre2_1.full) {
 		// dec_chg
-		if (status_changed.sr.sre2_1.bits.dec_chg && ctx->status.sr.sre2_1.bits.dec_chg && ctx->vin_dsc_handler[1].handler && ctx->vin_dsc_handler[1].data) {
+		if (status_changed.sr.sre2_1.bits.dec_chg && ctx->status.sr.sre2_1.bits.dec_chg && ctx->vin_dec_chg_handler[1].handler && ctx->vin_dec_chg_handler[1].data) {
 			vin_coder_channel_decoder_status_read(ctx, 1);
-			ctx->vin_dsc_handler[1].handler(ctx->vin_dsc_handler[1].data, ctx->eop_coder_channel_decoder_status[1].dec, ctx->eop_coder_channel_decoder_status[1].ptd);
+			ctx->vin_dec_chg_handler[1].handler(ctx->vin_dec_chg_handler[1].data, ctx->eop_coder_channel_decoder_status[1].dec, ctx->eop_coder_channel_decoder_status[1].ptd);
 		}
 	}
 	if (status_changed.sr.srs1_1.full) {
@@ -685,13 +694,35 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre1_2.full) {
-		;
+		// cis_buf
+		if (status_changed.sr.sre1_2.bits.cis_buf && ctx->vin_cis_buf_handler[2].handler && ctx->vin_cis_buf_handler[2].data) {
+			ctx->vin_cis_buf_handler[2].handler(ctx->vin_cis_buf_handler[2].data, ctx->status.sr.sre1_2.bits.cis_buf);
+		}
+		// cis_req
+		if (status_changed.sr.sre1_2.bits.cis_req && ctx->status.sr.sre1_2.bits.cis_req && ctx->vin_cid_sender_data[2].len) {
+			len = (ctx->vin_cid_sender_data[2].len < 20)?(ctx->vin_cid_sender_data[2].len):(20);
+			msg = ctx->vin_cid_sender_data[2].msg + ctx->vin_cid_sender_data[0].pos;
+			if (vin_cid_sender_data_write(ctx, 2, msg, len) < 0) {
+				ctx->vin_cid_sender_data[2].len = 0;
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_cid_sender_data_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			} else {
+				ctx->vin_cid_sender_data[2].len -= len;
+				ctx->vin_cid_sender_data[2].pos += len;
+			}
+		}
+		if (status_changed.sr.sre1_2.bits.cis_req && ctx->vin_cis_req_handler[2].handler && ctx->vin_cis_req_handler[2].data) {
+			ctx->vin_cis_req_handler[2].handler(ctx->vin_cis_req_handler[2].data, ctx->status.sr.sre1_2.bits.cis_req);
+		}
+		// cis_act
+		if (status_changed.sr.sre1_2.bits.cis_act && ctx->vin_cis_act_handler[2].handler && ctx->vin_cis_act_handler[2].data) {
+			ctx->vin_cis_act_handler[2].handler(ctx->vin_cis_act_handler[2].data, ctx->status.sr.sre1_2.bits.cis_act);
+		}
 	}
 	if (status_changed.sr.sre2_2.full) {
 		// dec_chg
-		if (status_changed.sr.sre2_2.bits.dec_chg && ctx->status.sr.sre2_2.bits.dec_chg && ctx->vin_dsc_handler[2].handler && ctx->vin_dsc_handler[2].data) {
+		if (status_changed.sr.sre2_2.bits.dec_chg && ctx->status.sr.sre2_2.bits.dec_chg && ctx->vin_dec_chg_handler[2].handler && ctx->vin_dec_chg_handler[2].data) {
 			vin_coder_channel_decoder_status_read(ctx, 2);
-			ctx->vin_dsc_handler[2].handler(ctx->vin_dsc_handler[2].data, ctx->eop_coder_channel_decoder_status[2].dec, ctx->eop_coder_channel_decoder_status[2].ptd);
+			ctx->vin_dec_chg_handler[2].handler(ctx->vin_dec_chg_handler[2].data, ctx->eop_coder_channel_decoder_status[2].dec, ctx->eop_coder_channel_decoder_status[2].ptd);
 		}
 	}
 	if (status_changed.sr.srs1_2.full) {
@@ -704,13 +735,35 @@ void vin_status_monitor(struct vinetic_context *ctx)
 		;
 	}
 	if (status_changed.sr.sre1_3.full) {
-		;
+		// cis_buf
+		if (status_changed.sr.sre1_3.bits.cis_buf && ctx->vin_cis_buf_handler[3].handler && ctx->vin_cis_buf_handler[3].data) {
+			ctx->vin_cis_buf_handler[3].handler(ctx->vin_cis_buf_handler[3].data, ctx->status.sr.sre1_3.bits.cis_buf);
+		}
+		// cis_req
+		if (status_changed.sr.sre1_3.bits.cis_req && ctx->status.sr.sre1_3.bits.cis_req && ctx->vin_cid_sender_data[3].len) {
+			len = (ctx->vin_cid_sender_data[3].len < 20)?(ctx->vin_cid_sender_data[3].len):(20);
+			msg = ctx->vin_cid_sender_data[3].msg + ctx->vin_cid_sender_data[0].pos;
+			if (vin_cid_sender_data_write(ctx, 3, msg, len) < 0) {
+				ctx->vin_cid_sender_data[3].len = 0;
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_cid_sender_data_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			} else {
+				ctx->vin_cid_sender_data[3].len -= len;
+				ctx->vin_cid_sender_data[3].pos += len;
+			}
+		}
+		if (status_changed.sr.sre1_3.bits.cis_req && ctx->vin_cis_req_handler[3].handler && ctx->vin_cis_req_handler[3].data) {
+			ctx->vin_cis_req_handler[3].handler(ctx->vin_cis_req_handler[3].data, ctx->status.sr.sre1_3.bits.cis_req);
+		}
+		// cis_act
+		if (status_changed.sr.sre1_3.bits.cis_act && ctx->vin_cis_act_handler[3].handler && ctx->vin_cis_act_handler[3].data) {
+			ctx->vin_cis_act_handler[3].handler(ctx->vin_cis_act_handler[3].data, ctx->status.sr.sre1_3.bits.cis_act);
+		}
 	}
 	if (status_changed.sr.sre2_3.full) {
 		// dec_chg
-		if (status_changed.sr.sre2_3.bits.dec_chg && ctx->status.sr.sre2_3.bits.dec_chg && ctx->vin_dsc_handler[3].handler && ctx->vin_dsc_handler[3].data) {
+		if (status_changed.sr.sre2_3.bits.dec_chg && ctx->status.sr.sre2_3.bits.dec_chg && ctx->vin_dec_chg_handler[3].handler && ctx->vin_dec_chg_handler[3].data) {
 			vin_coder_channel_decoder_status_read(ctx, 3);
-			ctx->vin_dsc_handler[3].handler(ctx->vin_dsc_handler[3].data, ctx->eop_coder_channel_decoder_status[3].dec, ctx->eop_coder_channel_decoder_status[3].ptd);
+			ctx->vin_dec_chg_handler[3].handler(ctx->vin_dec_chg_handler[3].data, ctx->eop_coder_channel_decoder_status[3].dec, ctx->eop_coder_channel_decoder_status[3].ptd);
 		}
 	}
 	if (status_changed.sr.srs1_3.full) {
@@ -765,7 +818,7 @@ u_int16_t vin_phi_revision(struct vinetic_context *ctx)
 	u_int16_t rev;
 
 	if (ioctl(ctx->dev_fd, VINETIC_REVISION, &rev) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_REVISION) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_REVISION) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		rev = 0;
 	}
 	ctx->revision = rev;
@@ -778,7 +831,7 @@ u_int16_t vin_phi_checksum(struct vinetic_context *ctx)
 	u_int16_t csum;
 
 	if (ioctl(ctx->dev_fd, VINETIC_CHECKSUM, &csum) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_CHECKSUM) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_CHECKSUM) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		csum = 0;
 	}
 
@@ -790,7 +843,7 @@ int vin_phi_disable_interrupt(struct vinetic_context *ctx)
 	int res;
 
 	if ((res = ioctl(ctx->dev_fd, VINETIC_DISABLE_IRQ, NULL)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s ioctl(ctx->dev_fd, VINETIC_DISABLE_IRQ) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() ioctl(ctx->dev_fd, VINETIC_DISABLE_IRQ) failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 	}
 
 	return res;
@@ -810,14 +863,14 @@ int vin_check_mbx_empty(struct vinetic_context *ctx)
 
 	for (;;) {
 		if ((res = vin_read(ctx, cmd, &bxsr, sizeof(struct vin_read_bxsr))) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_check_mbx_empty_end;
 		}
 		if (bxsr.bxsr2.bits.mbx_empty) {
 			break;
 		}
 		if (!cnt--) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s wait for mbx_empty time is out", __LINE__, __PRETTY_FUNCTION__);
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() wait for mbx_empty time is out", __LINE__, __PRETTY_FUNCTION__);
 			res = -EIO;
 			goto vin_check_mbx_empty_end;
 		}
@@ -841,14 +894,14 @@ int vin_wait_dl_rdy(struct vinetic_context *ctx)
 	cnt = 8000;
 	for (;;) {
 		if ((res = vin_read(ctx, cmd, &hwsr, sizeof(struct vin_read_hwsr))) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_wait_dl_ready_end;
 		}
 		if (hwsr.hwsr2.bits.dl_rdy) {
 			break;
 		}
 		if (!cnt--) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s wait for dl_rdy time is out", __LINE__, __PRETTY_FUNCTION__);
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() wait for dl_rdy time is out", __LINE__, __PRETTY_FUNCTION__);
 			goto vin_wait_dl_ready_end;
 		}
 		usleep(125);
@@ -895,39 +948,39 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Maximazing Command In-Box
 	cmd_short.full = VIN_wMAXCBX;
 	if ((res = vin_write(ctx, 0, &cmd_short.full, sizeof(union vin_cmd_short))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Load EDSP Micro Program
 	cmd_short.full = VIN_wLEMP;
 	if ((res = vin_write(ctx, 0, &cmd_short.full, sizeof(union vin_cmd_short))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// open PRAM file
 	if ((fd = open(ctx->pram_path, O_RDONLY)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s open() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() open() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	if (fstat(fd, &fd_stat) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fstat() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fstat() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	fd_offset = 0;
 	while (fd_offset < fd_stat.st_size) {
 		// Read PRAM segment header
 		if (lseek(fd, fd_offset, SEEK_SET) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 		if (read(fd, &xram_segment_header, sizeof(struct vin_xram_segment_header)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 		fd_offset += sizeof(struct vin_xram_segment_header);
@@ -954,23 +1007,23 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 		cmd_eop_set_pram_address.low_addres1 = ntohs(xram_segment_header.low);
 #endif
 		if ((res = vin_write(ctx, 0, &cmd_eop_set_pram_address, sizeof(union vin_cmd) + sizeof(u_int16_t) * 2)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 		while (seg_size) {
 			// Check for MBX-EMPTY
 			if (vin_check_mbx_empty(ctx) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			// Read PRAM segment data
 			if (lseek(fd, fd_offset, SEEK_SET) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_chunk_size = (seg_size < 252) ? (seg_size) : (252);
 			if (read(fd, cmd_eop_access_pram.data, seg_chunk_size * 2) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			fd_offset += seg_chunk_size * 2;
@@ -992,7 +1045,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 			cmd_eop_access_pram.header.parts.second.eop.bits.ecmd  = VIN_EOP_ACCESSPRAM;
 			cmd_eop_access_pram.header.parts.second.eop.bits.length = seg_chunk_size;
 			if ((res = vin_write(ctx, 0, &cmd_eop_access_pram, sizeof(union vin_cmd) + seg_chunk_size * 2)) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_size -= seg_chunk_size;
@@ -1078,28 +1131,28 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 
 	// open DRAM file
 	if ((fd = open(ctx->dram_path, O_RDONLY)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s open() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() open() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	if (fstat(fd, &fd_stat) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fstat() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fstat() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	fd_offset = 0;
 	while (fd_offset < fd_stat.st_size) {
 		// Read DRAM segment header
 		if (lseek(fd, fd_offset, SEEK_SET) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 		if (read(fd, &xram_segment_header, sizeof(struct vin_xram_segment_header)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 		fd_offset += sizeof(struct vin_xram_segment_header);
@@ -1119,7 +1172,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 		cmd_eop_set_dram_address.addres1 = ntohs(xram_segment_header.low);
 #endif
 		if ((res = vin_write(ctx, 0, &cmd_eop_set_dram_address, sizeof(union vin_cmd) + sizeof(u_int16_t))) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_edsp_firmware_error;
 		}
 #if 0
@@ -1130,17 +1183,17 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 		while (seg_size) {
 			// Check for MBX-EMPTY
 			if (vin_check_mbx_empty(ctx) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			// Read DRAM segment data
 			if (lseek(fd, fd_offset, SEEK_SET) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() lseek() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_chunk_size = (seg_size < 252) ? (seg_size) : (252);
 			if (read(fd, cmd_eop_access_dram.data, seg_chunk_size*2) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			fd_offset += seg_chunk_size * 2;
@@ -1162,7 +1215,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 			cmd_eop_access_dram.header.parts.second.eop.bits.ecmd  = VIN_EOP_ACCESS_DRAM;
 			cmd_eop_access_dram.header.parts.second.eop.bits.length = seg_chunk_size;
 			if ((res = vin_write(ctx, 0, &cmd_eop_access_dram, sizeof(union vin_cmd) + seg_chunk_size * 2)) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_edsp_firmware_error;
 			}
 			seg_size -= seg_chunk_size;
@@ -1246,7 +1299,7 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Download End
@@ -1260,30 +1313,30 @@ int vin_download_edsp_firmware(struct vinetic_context *ctx)
 	cmd.parts.second.eop.bits.ecmd  = VIN_EOP_DOWNLOAD_END;
 	cmd.parts.second.eop.bits.length = 0;
 	if ((res = vin_write(ctx, 0, &cmd, sizeof(union vin_cmd))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Wait for DL-RDY
 	if (vin_wait_dl_rdy(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_wait_dl_rdy() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_wait_dl_rdy() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 	// Minimazing Command In-Box
 	cmd_short.full = VIN_wMINCBX;
 	if ((res = vin_write(ctx, 0, &cmd_short.full, sizeof(union vin_cmd_short))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 
 	// Start EDSP 
 	cmd_short.full = VIN_wSTEDSP;
 	if ((res = vin_write(ctx, 0, &cmd_short.full, sizeof(union vin_cmd_short))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_edsp_firmware_error;
 	}
 
@@ -1320,7 +1373,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 
 	// open ALM DSP patch file
 	if (!(fp = fopen(path, "r"))) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fopen() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fopen() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_alm_dsp_error;
 	}
 
@@ -1336,27 +1389,27 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		// get start address
 		if (fgets(fpbuf, sizeof(fpbuf), fp)) {
 			if (sscanf(fpbuf, "0x%08X", &tmp_u32) != 1) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s sscanf() can't get start address", __LINE__, __PRETTY_FUNCTION__);
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() sscanf() can't get start address", __LINE__, __PRETTY_FUNCTION__);
 				goto vin_download_alm_dsp_error;
 			}
 		} else {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 		addr_start = tmp_u32;
 		// get end address
 		if (fgets(fpbuf, sizeof(fpbuf), fp)) {
 			if (sscanf(fpbuf, "0x%08X", &tmp_u32) != 1) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s sscanf() can't get end address", __LINE__, __PRETTY_FUNCTION__);
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() sscanf() can't get end address", __LINE__, __PRETTY_FUNCTION__);
 				goto vin_download_alm_dsp_error;
 			}
 		} else {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 		addr_end = tmp_u32;
 	} else {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s can't get ADDRESS section", __LINE__, __PRETTY_FUNCTION__);
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() can't get ADDRESS section", __LINE__, __PRETTY_FUNCTION__);
 		goto vin_download_alm_dsp_error;
 	}
 
@@ -1376,17 +1429,17 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 			for (i = 0; i < data_size; i++) {
 				if (fgets(fpbuf, sizeof(fpbuf), fp)) {
 					if (sscanf(fpbuf, "0x%04X", &tmp_u32) != 1) {
-						vin_message_stack_printf(ctx, "libvinetic.c:%d in %s sscanf() can't get DATA", __LINE__, __PRETTY_FUNCTION__);
+						vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() sscanf() can't get DATA", __LINE__, __PRETTY_FUNCTION__);
 						goto vin_download_alm_dsp_error;
 					}
 				} else {
-					vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+					vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 					goto vin_download_alm_dsp_error;
 				}
 				*datap++ = tmp_u32 & 0xffff;
 			}
 		} else {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s malloc() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() malloc() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 	}
@@ -1401,11 +1454,11 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 	if (flag_checksum) {
 		if (fgets(fpbuf, sizeof(fpbuf), fp)) {
 			if (sscanf(fpbuf, "0x%04X", &tmp_u32) != 1) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s sscanf() can't get CHECKSUM", __LINE__, __PRETTY_FUNCTION__);
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() sscanf() can't get CHECKSUM", __LINE__, __PRETTY_FUNCTION__);
 				goto vin_download_alm_dsp_error;
 			}
 		} else {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 // 		checksum = tmp_u32 & 0xffff;
@@ -1421,11 +1474,11 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 	if (flag_dschkr) {
 		if (fgets(fpbuf, sizeof(fpbuf), fp)) {
 			if (sscanf(fpbuf, "0x%04X", &tmp_u32) != 1) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s sscanf() can't get DSCHKR", __LINE__, __PRETTY_FUNCTION__);
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() sscanf() can't get DSCHKR", __LINE__, __PRETTY_FUNCTION__);
 				goto vin_download_alm_dsp_error;
 			}
 		} else {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fgets() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 // 		dschkr = tmp_u32 & 0xffff;
@@ -1433,7 +1486,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 
 	// Check for MBX-EMPTY
 	if (vin_check_mbx_empty(ctx) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_alm_dsp_error;
 	}
 	// Set FPI Address
@@ -1451,7 +1504,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 	cmd_eop_set_fpi_address.high_addres2 = (addr_end >> 16) & 0xffff;
 	cmd_eop_set_fpi_address.low_addres2 = addr_end & 0xffff;
 	if ((res = vin_write(ctx, 0, &cmd_eop_set_fpi_address, sizeof(struct vin_cmd_eop_set_fpi_address))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_alm_dsp_error;
 	}
 #if 0
@@ -1476,7 +1529,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 	while (data_size) {
 		// Check for MBX-EMPTY
 		if (vin_check_mbx_empty(ctx) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 		data_chunk_size = (data_size < 29) ? (data_size) : (29);
@@ -1494,7 +1547,7 @@ int vin_download_alm_dsp(struct vinetic_context *ctx, char *path)
 		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.ecmd  = VIN_EOP_ACCESS_FPI;
 		cmd_eop_access_fpi_memory.header.parts.second.eop.bits.length = data_chunk_size;
 		if ((res = vin_write(ctx, 0, &cmd_eop_access_fpi_memory, sizeof(union vin_cmd) + data_chunk_size*2)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_download_alm_dsp_error;
 		}
 		data_size -= data_chunk_size;
@@ -1584,7 +1637,7 @@ int vin_jump_alm_dsp(struct vinetic_context *ctx, unsigned int chan)
 	cmd_sop_ccr.sop_ccr.jump_dc = 0;
 	cmd_sop_ccr.sop_ccr.res0 = 0;
 	if ((res = vin_write(ctx, 0, &cmd_sop_ccr, sizeof(struct vin_cmd_sop_ccr))) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_jump_alm_dsp_error;
 	}
 	return 0;
@@ -1607,7 +1660,7 @@ int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path
 
 	// open CRAM *.byt file
 	if (!(fp = fopen(path, "r"))) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s fopen() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() fopen() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_download_cram_error;
 	}
 
@@ -1616,7 +1669,7 @@ int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path
 		if (res == 7) {
 			// Check for MBX-EMPTY
 			if (vin_check_mbx_empty(ctx) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_check_mbx_empty() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_cram_error;
 			}
 			// write coefficient
@@ -1627,7 +1680,7 @@ int vin_download_cram(struct vinetic_context *ctx, unsigned int chan, char *path
 			cmd_cop_generic.word[2] = cfd[4] & 0xffff;
 			cmd_cop_generic.word[3] = cfd[5] & 0xffff;
 			if ((res = vin_write(ctx, 0, &cmd_cop_generic, sizeof(struct vin_cmd_cop_generic))) < 0) {
-				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+				vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 				goto vin_download_cram_error;
 			}
 		}
@@ -1655,7 +1708,7 @@ int vin_write_sop_generic(struct vinetic_context *ctx, unsigned int chan, u_int1
 	cmd_sop_generic.header.parts.second.sop.bits.length = 1;
 	cmd_sop_generic.word = data;
 	if (vin_write(ctx, 1, &cmd_sop_generic, sizeof(struct vin_cmd_sop_generic)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_write_sop_generic_error;
 	}
 
@@ -1680,7 +1733,7 @@ int vin_set_opmode(struct vinetic_context *ctx, unsigned int ch, unsigned int mo
 	cmd.bits.chan = ch;
 
 	if (vin_write(ctx, 0, &cmd, sizeof(union vin_cmd_short)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_set_opmode_error;
 	}
 	return 0;
@@ -1706,12 +1759,12 @@ int vin_pcm_interface_control(struct vinetic_context *ctx, unsigned int rw)
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_pcm_interface_control.eop_pcm_interface_control, &ctx->eop_pcm_interface_control, sizeof(struct vin_eop_pcm_interface_control));
 		if (vin_write(ctx, 1, &cmd_eop_pcm_interface_control, sizeof(struct vin_cmd_eop_pcm_interface_control)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_interface_control_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_pcm_interface_control.header, &cmd_eop_pcm_interface_control, sizeof(struct vin_cmd_eop_pcm_interface_control)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_interface_control_error;
 		}
 		memcpy(&ctx->eop_pcm_interface_control, &cmd_eop_pcm_interface_control.eop_pcm_interface_control, sizeof(struct vin_eop_pcm_interface_control));
@@ -1740,12 +1793,12 @@ int vin_pcm_interface_channel(struct vinetic_context *ctx, unsigned int rw, unsi
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_pcm_interface_channel.eop_pcm_interface_channel, &ctx->eop_pcm_interface_channel[ch], sizeof(struct vin_eop_pcm_interface_channel));
 		if (vin_write(ctx, 1, &cmd_eop_pcm_interface_channel, sizeof(struct vin_cmd_eop_pcm_interface_channel)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_interface_channel_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_pcm_interface_channel.header, &cmd_eop_pcm_interface_channel, sizeof(struct vin_cmd_eop_pcm_interface_channel)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_interface_channel_error;
 		}
 		memcpy(&ctx->eop_pcm_interface_channel[ch], &cmd_eop_pcm_interface_channel.eop_pcm_interface_channel, sizeof(struct vin_eop_pcm_interface_channel));
@@ -1774,12 +1827,12 @@ int vin_pcm_near_end_lec(struct vinetic_context *ctx, unsigned int rw, unsigned 
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_pcm_near_end_lec.eop_pcm_near_end_lec, &ctx->eop_pcm_near_end_lec[ch], sizeof(struct vin_eop_pcm_near_end_lec));
 		if (vin_write(ctx, 1, &cmd_eop_pcm_near_end_lec, sizeof(struct vin_cmd_eop_pcm_near_end_lec)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_near_end_lec_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_pcm_near_end_lec.header, &cmd_eop_pcm_near_end_lec, sizeof(struct vin_cmd_eop_pcm_near_end_lec)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_pcm_near_end_lec_error;
 		}
 		memcpy(&ctx->eop_pcm_near_end_lec[ch], &cmd_eop_pcm_near_end_lec.eop_pcm_near_end_lec, sizeof(struct vin_eop_pcm_near_end_lec));
@@ -1808,12 +1861,12 @@ int vin_ali_control(struct vinetic_context *ctx, unsigned int rw)
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_ali_control.eop_ali_control, &ctx->eop_ali_control, sizeof(struct vin_eop_ali_control));
 		if (vin_write(ctx, 1, &cmd_eop_ali_control, sizeof(struct vin_cmd_eop_ali_control)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_control_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_ali_control.header, &cmd_eop_ali_control, sizeof(struct vin_cmd_eop_ali_control)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_control_error;
 		}
 		memcpy(&ctx->eop_ali_control, &cmd_eop_ali_control.eop_ali_control, sizeof(struct vin_eop_ali_control));
@@ -1842,13 +1895,13 @@ int vin_ali_channel(struct vinetic_context *ctx, unsigned int rw, unsigned int c
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_ali_channel.eop_ali_channel, &ctx->eop_ali_channel[ch], sizeof(struct vin_eop_ali_channel));
 		if (vin_write(ctx, 1, &cmd_eop_ali_channel, sizeof(struct vin_cmd_eop_ali_channel)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_channel_error;
 		}
 		return 0;
 	} else {
 		if (vin_read(ctx, cmd_eop_ali_channel.header, &cmd_eop_ali_channel, sizeof(struct vin_cmd_eop_ali_channel)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_channel_error;
 		}
 		memcpy(&ctx->eop_ali_channel[ch], &cmd_eop_ali_channel.eop_ali_channel, sizeof(struct vin_eop_ali_channel));
@@ -1875,12 +1928,12 @@ int vin_ali_near_end_lec(struct vinetic_context *ctx, unsigned int rw, unsigned 
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_ali_near_end_lec.eop_ali_near_end_lec, &ctx->eop_ali_near_end_lec[ch], sizeof(struct vin_eop_ali_near_end_lec));
 		if (vin_write(ctx, 1, &cmd_eop_ali_near_end_lec, sizeof(struct vin_cmd_eop_ali_near_end_lec)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_near_end_lec_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_ali_near_end_lec.header, &cmd_eop_ali_near_end_lec, sizeof(struct vin_cmd_eop_ali_near_end_lec)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_ali_near_end_lec_error;
 		}
 		memcpy(&ctx->eop_ali_near_end_lec[ch], &cmd_eop_ali_near_end_lec.eop_ali_near_end_lec, sizeof(struct vin_eop_ali_near_end_lec));
@@ -1907,7 +1960,7 @@ int vin_signaling_control(struct vinetic_context *ctx)
 	cmd_eop_signaling_control.header.parts.second.eop.bits.length = sizeof(struct vin_eop_signaling_control) / 2;
 	memcpy(&cmd_eop_signaling_control.eop_signaling_control, &ctx->eop_signaling_control, sizeof(struct vin_eop_signaling_control));
 	if (vin_write(ctx, 1, &cmd_eop_signaling_control, sizeof(struct vin_cmd_eop_signaling_control)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_signaling_control_error;
 	}
 	return 0;
@@ -1931,12 +1984,46 @@ int vin_signaling_channel(struct vinetic_context *ctx, unsigned int ch)
 	cmd_eop_signaling_channel.header.parts.second.eop.bits.length = sizeof(struct vin_eop_signaling_channel) / 2;
 	memcpy(&cmd_eop_signaling_channel.eop_signaling_channel, &ctx->eop_signaling_channel[ch], sizeof(struct vin_eop_signaling_channel));
 	if (vin_write(ctx, 1, &cmd_eop_signaling_channel, sizeof(struct vin_cmd_eop_signaling_channel)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_signaling_channel_error;
 	}
 	return 0;
 
 vin_signaling_channel_error:
+	return -1;
+}
+
+int vin_cid_sender(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_cid_sender cmd_eop_cid_sender;
+
+	cmd_eop_cid_sender.header.parts.first.bits.rw = rw;
+	cmd_eop_cid_sender.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_cid_sender.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_cid_sender.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_cid_sender.header.parts.first.bits.res = 0;
+	cmd_eop_cid_sender.header.parts.first.bits.chan = ch;
+	cmd_eop_cid_sender.header.parts.second.eop.bits.mod = VIN_MOD_SIG;
+	cmd_eop_cid_sender.header.parts.second.eop.bits.ecmd  = VIN_EOP_CIDSEND;
+	cmd_eop_cid_sender.header.parts.second.eop.bits.length = sizeof(struct vin_eop_cid_sender) / 2;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_cid_sender.eop_cid_sender, &ctx->eop_cid_sender[ch], sizeof(struct vin_eop_cid_sender));
+		if (vin_write(ctx, 1, &cmd_eop_cid_sender, sizeof(struct vin_cmd_eop_cid_sender)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_cid_sender_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_cid_sender.header, &cmd_eop_cid_sender, sizeof(struct vin_cmd_eop_cid_sender)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_cid_sender_error;
+		}
+		memcpy(&ctx->eop_cid_sender[ch], &cmd_eop_cid_sender.eop_cid_sender, sizeof(struct vin_eop_cid_sender));
+	}
+
+	return 0;
+
+vin_cid_sender_error:
 	return -1;
 }
 
@@ -1957,12 +2044,12 @@ int vin_dtmfat_generator(struct vinetic_context *ctx, unsigned int rw, unsigned 
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_dtmfat_generator.eop_dtmfat_generator, &ctx->eop_dtmfat_generator[ch], sizeof(struct vin_eop_dtmfat_generator));
 		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator, sizeof(struct vin_cmd_eop_dtmfat_generator)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_dtmfat_generator.header, &cmd_eop_dtmfat_generator, sizeof(struct vin_cmd_eop_dtmfat_generator)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_error;
 		}
 		memcpy(&ctx->eop_dtmfat_generator[ch], &cmd_eop_dtmfat_generator.eop_dtmfat_generator, sizeof(struct vin_eop_dtmfat_generator));
@@ -1991,12 +2078,12 @@ int vin_dtmf_receiver(struct vinetic_context *ctx, unsigned int rw, unsigned int
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_dtmf_receiver.eop_dtmf_receiver, &ctx->eop_dtmf_receiver[ch], sizeof(struct vin_eop_dtmf_receiver));
 		if (vin_write(ctx, 1, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmf_receiver_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_dtmf_receiver.header, &cmd_eop_dtmf_receiver, sizeof(struct vin_cmd_eop_dtmf_receiver)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmf_receiver_error;
 		}
 		memcpy(&ctx->eop_dtmf_receiver[ch], &cmd_eop_dtmf_receiver.eop_dtmf_receiver, sizeof(struct vin_eop_dtmf_receiver));
@@ -2023,7 +2110,7 @@ int vin_utg(struct vinetic_context *ctx, unsigned int ch)
 	cmd_eop_utg.header.parts.second.eop.bits.length = sizeof(struct vin_eop_utg) / 2;
 	memcpy(&cmd_eop_utg.eop_utg, &ctx->eop_utg[ch], sizeof(struct vin_eop_utg));
 	if (vin_write(ctx, 1, &cmd_eop_utg, sizeof(struct vin_cmd_eop_utg)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_utg_error;
 	}
 	return 0;
@@ -2049,7 +2136,7 @@ int vin_signaling_channel_configuration_rtp_support(struct vinetic_context *ctx,
 			&ctx->eop_signaling_channel_configuration_rtp_support[ch],
 			sizeof(struct vin_eop_signaling_channel_configuration_rtp_support));
 	if (vin_write(ctx, 1, &cmd_eop_signaling_channel_configuration_rtp_support, sizeof(struct vin_cmd_eop_signaling_channel_configuration_rtp_support)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_signaling_channel_configuration_rtp_support_error;
 	}
 	return 0;
@@ -2073,7 +2160,7 @@ int vin_coder_control(struct vinetic_context *ctx)
 	cmd_eop_coder_control.header.parts.second.eop.bits.length = sizeof(struct vin_eop_coder_control) / 2;
 	memcpy(&cmd_eop_coder_control.eop_coder_control, &ctx->eop_coder_control, sizeof(struct vin_eop_coder_control));
 	if (vin_write(ctx, 1, &cmd_eop_coder_control, sizeof(struct vin_cmd_eop_coder_control)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_coder_control_error;
 	}
 	return 0;
@@ -2099,7 +2186,7 @@ int vin_coder_channel_speech_compression(struct vinetic_context *ctx, unsigned i
 			&ctx->eop_coder_channel_speech_compression[ch],
 			sizeof(struct vin_eop_coder_channel_speech_compression));
 	if (vin_write(ctx, 1, &cmd_eop_coder_channel_speech_compression, sizeof(struct vin_cmd_eop_coder_channel_speech_compression)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_coder_channel_speech_compression_error;
 	}
 	return 0;
@@ -2125,7 +2212,7 @@ int vin_coder_configuration_rtp_support(struct vinetic_context *ctx)
 			&ctx->eop_coder_configuration_rtp_support,
 			sizeof(struct vin_eop_coder_configuration_rtp_support));
 	if (vin_write(ctx, 1, &cmd_eop_coder_configuration_rtp_support, sizeof(struct vin_cmd_eop_coder_configuration_rtp_support)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_coder_configuration_rtp_support_error;
 	}
 	return 0;
@@ -2151,7 +2238,7 @@ int vin_coder_channel_configuration_rtp_support(struct vinetic_context *ctx, uns
 			&ctx->eop_coder_channel_configuration_rtp_support[ch],
 			sizeof(struct vin_eop_coder_channel_configuration_rtp_support));
 	if (vin_write(ctx, 1, &cmd_eop_coder_channel_configuration_rtp_support, sizeof(struct vin_cmd_eop_coder_channel_configuration_rtp_support)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_coder_channel_configuration_rtp_support_error;
 	}
 	return 0;
@@ -2174,7 +2261,7 @@ int vin_coder_channel_jb_statistic_reset(struct vinetic_context *ctx, unsigned i
 	cmd.parts.second.eop.bits.ecmd = VIN_EOP_CODER_JBSTAT;
 	cmd.parts.second.eop.bits.length = 0;
 	if (vin_write(ctx, 1, &cmd, sizeof(union vin_cmd)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_coder_channel_jb_statistic_reset_error;
 	}
 	return 0;
@@ -2199,12 +2286,12 @@ int vin_coder_channel_decoder_status(struct vinetic_context *ctx, unsigned int r
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_coder_channel_decoder_status.eop_coder_channel_decoder_status, &ctx->eop_coder_channel_decoder_status[ch], sizeof(struct vin_eop_coder_channel_decoder_status));
 		if (vin_write(ctx, 1, &cmd_eop_coder_channel_decoder_status, sizeof(struct vin_cmd_eop_coder_channel_decoder_status)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_coder_channel_decoder_status_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_coder_channel_decoder_status.header, &cmd_eop_coder_channel_decoder_status, sizeof(struct vin_cmd_eop_coder_channel_decoder_status)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_coder_channel_decoder_status_error;
 		}
 		memcpy(&ctx->eop_coder_channel_decoder_status[ch], &cmd_eop_coder_channel_decoder_status.eop_coder_channel_decoder_status, sizeof(struct vin_eop_coder_channel_decoder_status));
@@ -2214,6 +2301,88 @@ int vin_coder_channel_decoder_status(struct vinetic_context *ctx, unsigned int r
 
 vin_coder_channel_decoder_status_error:
 	return -1;
+}
+
+int vin_cid_sender_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
+{
+	struct vin_cmd_eop_cid_sender_coefficients cmd_eop_cid_sender_coefficients;
+
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.rw = rw;
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.res = 0;
+	cmd_eop_cid_sender_coefficients.header.parts.first.bits.chan = ch;
+	cmd_eop_cid_sender_coefficients.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
+	cmd_eop_cid_sender_coefficients.header.parts.second.eop.bits.ecmd  = VIN_EOP_CIDS_COEFF;
+	cmd_eop_cid_sender_coefficients.header.parts.second.eop.bits.length = sizeof(struct vin_eop_cid_sender_coefficients) / 2;
+
+	if (rw == VIN_WRITE) {
+		memcpy(&cmd_eop_cid_sender_coefficients.eop_cid_sender_coefficients, &ctx->eop_cid_sender_coefficients[ch], sizeof(struct vin_eop_cid_sender_coefficients));
+		if (vin_write(ctx, 1, &cmd_eop_cid_sender_coefficients, sizeof(struct vin_cmd_eop_cid_sender_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_cid_sender_coefficients_error;
+		}
+	} else {
+		if (vin_read(ctx, cmd_eop_cid_sender_coefficients.header, &cmd_eop_cid_sender_coefficients, sizeof(struct vin_cmd_eop_cid_sender_coefficients)) < 0) {
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			goto vin_cid_sender_coefficients_error;
+		}
+		memcpy(&ctx->eop_cid_sender_coefficients[ch], &cmd_eop_cid_sender_coefficients.eop_cid_sender_coefficients, sizeof(struct vin_eop_cid_sender_coefficients));
+	}
+
+	return 0;
+
+vin_cid_sender_coefficients_error:
+	return -1;
+}
+
+int vin_cid_sender_data(struct vinetic_context *ctx, unsigned int ch, void *data, unsigned int len)
+{
+	struct vin_cmd_eop_cid_sender_data cmd_eop_cid_sender_data;
+
+	if (len > 20) {
+		len = 20;
+	}
+
+	cmd_eop_cid_sender_data.header.parts.first.bits.rw = VIN_WRITE;
+	cmd_eop_cid_sender_data.header.parts.first.bits.sc = VIN_SC_NO;
+	cmd_eop_cid_sender_data.header.parts.first.bits.bc = VIN_BC_NO;
+	cmd_eop_cid_sender_data.header.parts.first.bits.cmd = VIN_CMD_EOP;
+	cmd_eop_cid_sender_data.header.parts.first.bits.res = 0;
+	cmd_eop_cid_sender_data.header.parts.first.bits.chan = ch;
+	cmd_eop_cid_sender_data.header.parts.second.eop.bits.mod = VIN_MOD_RESOURCE;
+	cmd_eop_cid_sender_data.header.parts.second.eop.bits.ecmd  = VIN_EOP_CIDS_DATA;
+	cmd_eop_cid_sender_data.header.parts.second.eop.bits.length = 1 + (len / 2) + (len & 1);
+
+	cmd_eop_cid_sender_data.eop_cid_sender_data.odd = len & 1;
+
+	memcpy(&cmd_eop_cid_sender_data.eop_cid_sender_data.data, data, len);
+	if (vin_write(ctx, 1, &cmd_eop_cid_sender_data, sizeof(struct vin_cmd_eop_cid_sender_data)) < 0) {
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		goto vin_cid_sender_data_error;
+	}
+
+	return 0;
+
+vin_cid_sender_data_error:
+	return -1;
+}
+
+void vin_cid_sender_data_set(struct vinetic_context *ctx, unsigned int ch, unsigned char *data, unsigned int len)
+{
+	unsigned char tmp;
+	size_t i;
+
+	ctx->vin_cid_sender_data[ch].pos = 0;
+	ctx->vin_cid_sender_data[ch].len = len;
+	memcpy(ctx->vin_cid_sender_data[ch].msg, data, len);
+
+	for (i = 0; i < sizeof(ctx->vin_cid_sender_data[ch].msg); i += 2) {
+		tmp = ctx->vin_cid_sender_data[ch].msg[i];
+		ctx->vin_cid_sender_data[ch].msg[i] = ctx->vin_cid_sender_data[ch].msg[i+1];
+		ctx->vin_cid_sender_data[ch].msg[i+1] = tmp;
+	}
 }
 
 int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch)
@@ -2233,12 +2402,12 @@ int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int 
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_dtmfat_generator_coefficients.eop_dtmfat_generator_coefficients, &ctx->eop_dtmfat_generator_coefficients[ch], sizeof(struct vin_eop_dtmfat_generator_coefficients));
 		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator_coefficients, sizeof(struct vin_cmd_eop_dtmfat_generator_coefficients)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_coefficients_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_dtmfat_generator_coefficients.header, &cmd_eop_dtmfat_generator_coefficients, sizeof(struct vin_cmd_eop_dtmfat_generator_coefficients)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_coefficients_error;
 		}
 		memcpy(&ctx->eop_dtmfat_generator_coefficients[ch], &cmd_eop_dtmfat_generator_coefficients.eop_dtmfat_generator_coefficients, sizeof(struct vin_eop_dtmfat_generator_coefficients));
@@ -2267,12 +2436,12 @@ int vin_dtmfat_generator_data(struct vinetic_context *ctx, unsigned int rw, unsi
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_dtmfat_generator_data.eop_dtmfat_generator_data, &ctx->eop_dtmfat_generator_data[ch], sizeof(struct vin_eop_dtmfat_generator_data));
 		if (vin_write(ctx, 1, &cmd_eop_dtmfat_generator_data, sizeof(struct vin_cmd_eop_dtmfat_generator_data)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_data_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_dtmfat_generator_data.header, &cmd_eop_dtmfat_generator_data, sizeof(struct vin_cmd_eop_dtmfat_generator_data)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_dtmfat_generator_data_error;
 		}
 		memcpy(&ctx->eop_dtmfat_generator_data[ch], &cmd_eop_dtmfat_generator_data.eop_dtmfat_generator_data, sizeof(struct vin_eop_dtmfat_generator_data));
@@ -2301,12 +2470,12 @@ int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned 
 	if (rw == VIN_WRITE) {
 		memcpy(&cmd_eop_utg_coefficients.eop_utg_coefficients, &ctx->eop_utg_coefficients[ch], sizeof(struct vin_eop_utg_coefficients));
 		if (vin_write(ctx, 1, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_utg_coefficients_error;
 		}
 	} else {
 		if (vin_read(ctx, cmd_eop_utg_coefficients.header, &cmd_eop_utg_coefficients, sizeof(struct vin_cmd_eop_utg_coefficients)) < 0) {
-			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+			vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_read() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 			goto vin_utg_coefficients_error;
 		}
 		memcpy(&ctx->eop_utg_coefficients[ch], &cmd_eop_utg_coefficients.eop_utg_coefficients, sizeof(struct vin_eop_utg_coefficients));
@@ -2355,7 +2524,7 @@ int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int ch, cons
 	// get tone copy
 	next = input = strdup(tone);
 	if (!input) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s strdup() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() strdup() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_utg_set_asterisk_tone_error;
 	}
 	// parse tone
@@ -2569,7 +2738,7 @@ int vin_set_endian_mode(struct vinetic_context *ctx, int mode)
 	cmd_eop_endian_control.eop_endian_control.res = 0;
 	cmd_eop_endian_control.eop_endian_control.le = mode;
 	if (vin_write(ctx, 1, &cmd_eop_endian_control, sizeof(struct vin_cmd_eop_endian_control)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_set_endian_mode_error;
 	}
 	return 0;
@@ -2595,7 +2764,7 @@ int vin_read_fw_version(struct vinetic_context *ctx)
 
 	if (vin_read(ctx, cmd_eop_edsp_sw_version_register.header, &cmd_eop_edsp_sw_version_register,
 			sizeof(struct vin_cmd_eop_edsp_sw_version_register)) < 0) {
-		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
+		vin_message_stack_printf(ctx, "libvinetic.c:%d in %s() vin_write() failed: %s", __LINE__, __PRETTY_FUNCTION__, strerror(errno));
 		goto vin_read_fw_version_error;
 	}
 

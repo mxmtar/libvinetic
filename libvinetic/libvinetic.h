@@ -49,6 +49,7 @@ struct vinetic_context {
 
 	struct vin_eop_signaling_control eop_signaling_control;
 	struct vin_eop_signaling_channel eop_signaling_channel[4];
+	struct vin_eop_cid_sender eop_cid_sender[4];
 	struct vin_eop_dtmfat_generator eop_dtmfat_generator[4];
 	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
 	struct vin_eop_utg eop_utg[4];
@@ -60,6 +61,12 @@ struct vinetic_context {
 	struct vin_eop_coder_channel_configuration_rtp_support eop_coder_channel_configuration_rtp_support[4];
 	struct vin_eop_coder_channel_decoder_status eop_coder_channel_decoder_status[4];
 
+	struct vin_eop_cid_sender_coefficients eop_cid_sender_coefficients[4];
+	struct vin_cid_sender_data {
+		unsigned char msg[256];
+		unsigned int len;
+		unsigned int pos;
+	} vin_cid_sender_data[4];
 	struct vin_eop_dtmfat_generator_coefficients eop_dtmfat_generator_coefficients[4];
 	struct vin_eop_dtmfat_generator_data eop_dtmfat_generator_data[4];
 	struct vin_eop_utg_coefficients eop_utg_coefficients[4];
@@ -71,11 +78,27 @@ struct vinetic_context {
 	struct vin_status_registers status_old;
 	struct vin_status_registers status_mask;
 
-	// dsc (decoder status change) handlers
-	struct vinetic_dsc_handler {
+	// CID Send buffer handlers
+	struct vinetic_cis_buf_handler {
+		void *data;
+		void (* handler)(void *data, int state);
+	} vin_cis_buf_handler[4];
+	// CID Send request handlers
+	struct vinetic_cis_req_handler {
+		void *data;
+		void (* handler)(void *data, int sate);
+	} vin_cis_req_handler[4];
+	// CID Send act handlers
+	struct vinetic_cis_act_handler {
+		void *data;
+		void (* handler)(void *data, int state);
+	} vin_cis_act_handler[4];
+
+	// decoder status change handlers
+	struct vinetic_dec_chg_handler {
 		void *data;
 		void (* handler)(void *data, unsigned int dec, unsigned int pt);
-	} vin_dsc_handler[4];
+	} vin_dec_chg_handler[4];
 
 	// hook handlers
 	struct vinetic_hook_handler {
@@ -885,6 +908,65 @@ do { \
 	} \
 } while (0)
 
+extern int vin_cid_sender(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_cid_sender_enable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_cid_sender[_ch].en = VIN_EN; \
+	(_ctx)->eop_cid_sender[_ch].cisnr = _ch; \
+	int __res = vin_cid_sender(_ctx, VIN_WRITE, _ch); \
+	if (__res < 0) { \
+		(_ctx)->eop_cid_sender[_ch].en = VIN_DIS; \
+	} \
+	__res; \
+})
+
+#define vin_cid_sender_disable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_cid_sender[_ch].en = VIN_DIS; \
+	int __res = vin_cid_sender(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_is_cid_sender_enabled(_ctx, _ch) \
+({ \
+	int __res = 0; \
+	if ((_ch >= 0) && ((_ctx)->eop_cid_sender[_ch].en == VIN_EN)) { \
+		__res = 1; \
+	} \
+	__res; \
+})
+
+#define vin_cid_sender_ad(_ctx, _ch, _ad) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].ad = _ad; \
+} while (0)
+
+#define vin_cid_sender_hlev(_ctx, _ch, _hlev) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].hlev = _hlev; \
+} while (0)
+
+#define vin_cid_sender_v23(_ctx, _ch, _v23) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].v23 = _v23; \
+} while (0)
+
+#define vin_cid_sender_ar(_ctx, _ch, _ar) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].ar = _ar; \
+} while (0)
+
+#define vin_cid_sender_add_a(_ctx, _ch, _add_a) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].add_a = _add_a; \
+} while (0)
+
+#define vin_cid_sender_add_b(_ctx, _ch, _add_b) \
+do { \
+	(_ctx)->eop_cid_sender[_ch].add_b = _add_b; \
+} while (0)
+
 extern int vin_dtmfat_generator(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
 #define vin_dtmfat_generator_enable(_ctx, _ch) \
@@ -1354,6 +1436,53 @@ int vin_coder_channel_decoder_status(struct vinetic_context *ctx, unsigned int r
 	__res = vin_coder_channel_decoder_status(_ctx, VIN_READ, _ch); \
 	__res; \
 })
+
+extern int vin_cid_sender_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_cid_sender_coefficients_write(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_cid_sender_coefficients(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_cid_sender_coefficients_read(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_cid_sender_coefficients(_ctx, VIN_READ, _ch); \
+	__res; \
+})
+
+#define vin_cid_sender_coefficients_set_level(_ctx, _ch, _level) \
+do { \
+	(_ctx)->eop_cid_sender_coefficients[_ch].level = _level; \
+} while (0)
+
+#define vin_cid_sender_coefficients_set_seizure(_ctx, _ch, _seizure) \
+do { \
+	(_ctx)->eop_cid_sender_coefficients[_ch].seizure = _seizure; \
+} while (0)
+
+#define vin_cid_sender_coefficients_set_mark(_ctx, _ch, _mark) \
+do { \
+	(_ctx)->eop_cid_sender_coefficients[_ch].mark = _mark; \
+} while (0)
+
+#define vin_cid_sender_coefficients_set_brs(_ctx, _ch, _brs) \
+do { \
+	(_ctx)->eop_cid_sender_coefficients[_ch].brs = _brs; \
+} while (0)
+
+extern int vin_cid_sender_data(struct vinetic_context *ctx, unsigned int ch, void *data, unsigned int len);
+
+#define vin_cid_sender_data_write(_ctx, _ch, _data, _len) \
+({ \
+	int __res; \
+	__res = vin_cid_sender_data(_ctx, _ch, _data, _len); \
+	__res; \
+})
+
+extern void vin_cid_sender_data_set(struct vinetic_context *ctx, unsigned int ch, unsigned char *data, unsigned int len);
 
 extern int vin_dtmfat_generator_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
@@ -1861,11 +1990,100 @@ extern int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int c
 extern double vin_gainem_to_gaindb(u_int8_t em);
 extern u_int8_t vin_gaindb_to_gainem(double g);
 
-#define vin_set_dsc_handler(_ctx, _ch, _handler, _data) \
+#define vin_set_cis_buf_handler(_ctx, _ch, _handler, _data) \
 do { \
-	vin_coder_channel_decoder_status_read(_ctx, _ch); \
-	(_ctx)->vin_dsc_handler[_ch].handler = _handler; \
-	(_ctx)->vin_dsc_handler[_ch].data = _data; \
+	(_ctx)->vin_cis_buf_handler[_ch].handler = _handler; \
+	(_ctx)->vin_cis_buf_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_buf = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_buf = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_buf = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_buf = 1; \
+	} \
+} while (0)
+
+#define vin_reset_cis_buf_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_cis_buf_handler[_ch].handler = NULL; \
+	(_ctx)->vin_cis_buf_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_buf = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_buf = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_buf = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_buf = 0; \
+	} \
+} while (0)
+
+#define vin_set_cis_req_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_cis_req_handler[_ch].handler = _handler; \
+	(_ctx)->vin_cis_req_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_req = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_req = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_req = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_req = 1; \
+	} \
+} while (0)
+
+#define vin_reset_cis_req_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_cis_req_handler[_ch].handler = NULL; \
+	(_ctx)->vin_cis_req_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_req = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_req = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_req = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_req = 0; \
+	} \
+} while (0)
+
+#define vin_set_cis_act_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_cis_act_handler[_ch].handler = _handler; \
+	(_ctx)->vin_cis_act_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_act = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_act = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_act = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_act = 1; \
+	} \
+} while (0)
+
+#define vin_reset_cis_act_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_cis_act_handler[_ch].handler = NULL; \
+	(_ctx)->vin_cis_act_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.cis_act = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.cis_act = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.cis_act = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.cis_act = 0; \
+	} \
+} while (0)
+
+#define vin_set_dec_chg_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_dec_chg_handler[_ch].handler = _handler; \
+	(_ctx)->vin_dec_chg_handler[_ch].data = _data; \
 	if (_ch == 3) { \
 		(_ctx)->status_mask.sr.sre2_3.bits.dec_chg = 1; \
 	} else if (_ch == 2) { \
@@ -1877,10 +2095,10 @@ do { \
 	} \
 } while (0)
 
-#define vin_reset_dsc_handler(_ctx, _ch) \
+#define vin_reset_dec_chg_handler(_ctx, _ch) \
 do { \
-	(_ctx)->vin_dsc_handler[_ch].handler = NULL; \
-	(_ctx)->vin_dsc_handler[_ch].data = NULL; \
+	(_ctx)->vin_dec_chg_handler[_ch].handler = NULL; \
+	(_ctx)->vin_dec_chg_handler[_ch].data = NULL; \
 	if (_ch == 3) { \
 		(_ctx)->status_mask.sr.sre2_3.bits.dec_chg = 0; \
 	} else if (_ch == 2) { \
