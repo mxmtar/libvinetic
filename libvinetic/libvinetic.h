@@ -52,6 +52,9 @@ struct vinetic_context {
 	struct vin_eop_cid_sender eop_cid_sender[4];
 	struct vin_eop_dtmfat_generator eop_dtmfat_generator[4];
 	struct vin_eop_dtmf_receiver eop_dtmf_receiver[4];
+	struct vin_eop_utd_1 eop_utd_1[4];
+	struct vin_eop_utd_2 eop_utd_2[4];
+	struct vin_eop_cpt eop_cpt[4];
 	struct vin_eop_utg eop_utg[4];
 	struct vin_eop_signaling_channel_configuration_rtp_support eop_signaling_channel_configuration_rtp_support[4];
 
@@ -69,6 +72,8 @@ struct vinetic_context {
 	} vin_cid_sender_data[4];
 	struct vin_eop_dtmfat_generator_coefficients eop_dtmfat_generator_coefficients[4];
 	struct vin_eop_dtmfat_generator_data eop_dtmfat_generator_data[4];
+	struct vin_eop_utd_coefficients eop_utd_coefficients[8];
+	struct vin_eop_cpt_coefficients eop_cpt_coefficients[4];
 	struct vin_eop_utg_coefficients eop_utg_coefficients[4];
 
 	struct vin_eop_edsp_sw_version_register edsp_sw_version_register;
@@ -78,6 +83,20 @@ struct vinetic_context {
 	struct vin_status_registers status_old;
 	struct vin_status_registers status_mask;
 
+	// UTD handlers
+	struct vinetic_utd_1_handler {
+		void *data;
+		void (* handler)(void *data, int src);
+	} vin_utd_1_handler[4];
+	struct vinetic_utd_2_handler {
+		void *data;
+		void (* handler)(void *data, int src);
+	} vin_utd_2_handler[4];
+	// CPT handlers
+	struct vinetic_cpt_handler {
+		void *data;
+		void (* handler)(void *data, int src);
+	} vin_cpt_handler[4];
 	// CID Send buffer handlers
 	struct vinetic_cis_buf_handler {
 		void *data;
@@ -239,7 +258,7 @@ extern int vin_pcm_interface_control(struct vinetic_context *ctx, unsigned int r
 #define vin_pcm_interface_disable(_ctx) \
 ({ \
 	(_ctx)->eop_pcm_interface_control.en = VIN_DIS; \
-	int __res = eop_pcm_interface_control(_ctx, VIN_WRITE); \
+	int __res = vin_pcm_interface_control(_ctx, VIN_WRITE); \
 	__res; \
 })
 
@@ -893,7 +912,7 @@ do { \
 #define vin_signaling_channel_set_input_sig_a(_ctx, _ch, _inp, _sig_a) \
 do { \
 	if (_inp == 2) { \
-		(_ctx)->eop_signaling_channel[_ch].i5 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
+		(_ctx)->eop_signaling_channel[_ch].i2 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
 	} else { \
 		(_ctx)->eop_signaling_channel[_ch].i1 = VIN_SIG_SIG_OUTA0 + _sig_a * 2; \
 	} \
@@ -902,7 +921,7 @@ do { \
 #define vin_signaling_channel_set_input_sig_b(_ctx, _ch, _inp, _sig_b) \
 do { \
 	if (_inp == 2) { \
-		(_ctx)->eop_signaling_channel[_ch].i5 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
+		(_ctx)->eop_signaling_channel[_ch].i2 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
 	} else { \
 		(_ctx)->eop_signaling_channel[_ch].i1 = VIN_SIG_SIG_OUTB0 + _sig_b * 2; \
 	} \
@@ -1070,13 +1089,155 @@ do { \
 	(_ctx)->eop_dtmf_receiver[_ch].as = _as; \
 } while (0)
 
-extern int vin_utg(struct vinetic_context *ctx, unsigned int ch);
+extern int vin_utd_1(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_utd_1_enable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_utd_1[_ch].en = VIN_EN; \
+	(_ctx)->eop_utd_1[_ch].utdnr = _ch; \
+	int __res = vin_utd_1(_ctx, VIN_WRITE, _ch); \
+	if (__res < 0) { \
+		(_ctx)->eop_utd_1[_ch].en = VIN_DIS; \
+	} \
+	__res; \
+})
+
+#define vin_utd_1_disable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_utd_1[_ch].en = VIN_DIS; \
+	int __res = vin_utd_1(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_is_utd_1_enabled(_ctx, _ch) \
+({ \
+	int __res = 0; \
+	if ((_ch >= 0) && ((_ctx)->eop_utd_1[_ch].en == VIN_EN)) { \
+		__res = 1; \
+	} \
+	__res; \
+})
+
+#define vin_utd_1_set_is(_ctx, _ch, _is) \
+do { \
+	(_ctx)->eop_utd_1[_ch].is = _is; \
+} while (0)
+
+#define vin_utd_1_set_md(_ctx, _ch, _md) \
+do { \
+	(_ctx)->eop_utd_1[_ch].md = _md; \
+} while (0)
+
+extern int vin_utd_2(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_utd_2_enable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_utd_2[_ch].en = VIN_EN; \
+	(_ctx)->eop_utd_2[_ch].utdnr = _ch + 4; \
+	int __res = vin_utd_2(_ctx, VIN_WRITE, _ch); \
+	if (__res < 0) { \
+		(_ctx)->eop_utd_2[_ch].en = VIN_DIS; \
+	} \
+	__res; \
+})
+
+#define vin_utd_2_disable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_utd_2[_ch].en = VIN_DIS; \
+	int __res = vin_utd_2(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_is_utd_2_enabled(_ctx, _ch) \
+({ \
+	int __res = 0; \
+	if ((_ch >= 0) && ((_ctx)->eop_utd_2[_ch].en == VIN_EN)) { \
+		__res = 1; \
+	} \
+	__res; \
+})
+
+#define vin_utd_2_set_is(_ctx, _ch, _is) \
+do { \
+	(_ctx)->eop_utd_2[_ch].is = _is; \
+} while (0)
+
+#define vin_utd_2_set_md(_ctx, _ch, _md) \
+do { \
+	(_ctx)->eop_utd_2[_ch].md = _md; \
+} while (0)
+
+extern int vin_cpt(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_cpt_enable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_cpt[_ch].en = VIN_EN; \
+	(_ctx)->eop_cpt[_ch].cptnr = _ch; \
+	int __res = vin_cpt(_ctx, VIN_WRITE, _ch); \
+	if (__res < 0) { \
+		(_ctx)->eop_cpt[_ch].en = VIN_DIS; \
+	} \
+	__res; \
+})
+
+#define vin_cpt_disable(_ctx, _ch) \
+({ \
+	(_ctx)->eop_cpt[_ch].en = VIN_DIS; \
+	int __res = vin_cpt(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_is_cpt_enabled(_ctx, _ch) \
+({ \
+	int __res = 0; \
+	if ((_ch >= 0) && ((_ctx)->eop_cpt[_ch].en == VIN_EN)) { \
+		__res = 1; \
+	} \
+	__res; \
+})
+
+#define vin_cpt_set_at(_ctx, _ch, _at) \
+do { \
+	(_ctx)->eop_cpt[_ch].at = _at; \
+} while (0)
+
+#define vin_cpt_set_ats(_ctx, _ch, _ats) \
+do { \
+	(_ctx)->eop_cpt[_ch].ats = _ats; \
+} while (0)
+
+#define vin_cpt_set_tp(_ctx, _ch, _tp) \
+do { \
+	(_ctx)->eop_cpt[_ch].tp = _tp; \
+} while (0)
+
+#define vin_cpt_set_cnt(_ctx, _ch, _cnt) \
+do { \
+	(_ctx)->eop_cpt[_ch].cnt = _cnt; \
+} while (0)
+
+#define vin_cpt_set_fl(_ctx, _ch, _fl) \
+do { \
+	(_ctx)->eop_cpt[_ch].fl = _fl; \
+} while (0)
+
+#define vin_cpt_set_ws(_ctx, _ch, _ws) \
+do { \
+	(_ctx)->eop_cpt[_ch].ws = _ws; \
+} while (0)
+
+#define vin_cpt_set_is(_ctx, _ch, _is) \
+do { \
+	(_ctx)->eop_cpt[_ch].is = _is; \
+} while (0)
+
+extern int vin_utg(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
 
 #define vin_utg_enable(_ctx, _ch) \
 ({ \
 	(_ctx)->eop_utg[_ch].en = VIN_EN; \
 	(_ctx)->eop_utg[_ch].utgnr = _ch; \
-	int __res = vin_utg(_ctx, _ch); \
+	int __res = vin_utg(_ctx, VIN_WRITE, _ch); \
 	if (__res < 0) { \
 		(_ctx)->eop_utg[_ch].en = VIN_DIS; \
 	} \
@@ -1086,7 +1247,7 @@ extern int vin_utg(struct vinetic_context *ctx, unsigned int ch);
 #define vin_utg_disable(_ctx, _ch) \
 ({ \
 	(_ctx)->eop_utg[_ch].en = VIN_DIS; \
-	int __res = vin_utg(_ctx, _ch); \
+	int __res = vin_utg(_ctx, VIN_WRITE, _ch); \
 	__res; \
 })
 
@@ -1520,6 +1681,500 @@ extern int vin_dtmfat_generator_data(struct vinetic_context *ctx, unsigned int r
 do { \
 	memset((_ctx)->eop_dtmfat_generator_data[_ch].dtc, 0, sizeof((_ctx)->eop_dtmfat_generator_data[_ch].dtc)); \
 	(_ctx)->eop_dtmfat_generator_data[_ch].dtc[0] = _dtc; \
+} while (0)
+
+extern int vin_utd_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_utd_coefficients_write(_ctx, _ch, _utd) \
+({ \
+	int __res; \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	__res = vin_utd_coefficients(_ctx, VIN_WRITE, __ch); \
+	__res; \
+})
+
+#define vin_utd_coefficients_read(_ctx, _ch, _utd) \
+({ \
+	int __res; \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	__res = vin_utd_coefficients(_ctx, VIN_READ, __ch); \
+	__res; \
+})
+
+#define vin_utd_coefficients_set_levels(_ctx, _ch, _utd, _levels) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _levels; \
+	u_int16_t __imm = (powf(10.f, ((__f - 3.9f) / 20.f)) * 32768.f); \
+	(_ctx)->eop_utd_coefficients[__ch].levels = __imm - (_ctx)->eop_utd_coefficients[__ch].nlev; \
+} while (0)
+
+#define vin_utd_coefficients_set_cf(_ctx, _ch, _utd, _cf) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _cf; \
+	(_ctx)->eop_utd_coefficients[__ch].cf = (cos((2.f * M_PI * __f) / 8000.f) * 32768.f); \
+} while (0)
+
+#define vin_utd_coefficients_set_bw(_ctx, _ch, _utd, _bw) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _bw; \
+	float __a = tanf((__f * M_PI) / 8000.f); \
+	(_ctx)->eop_utd_coefficients[__ch].bw = ((__a / (1 + __a)) * 65536.f); \
+} while (0)
+
+#define vin_utd_coefficients_set_del_snr(_ctx, _ch, _utd, _del_snr) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _del_snr; \
+	(_ctx)->eop_utd_coefficients[__ch].del_snr = ((__f > 0)?(1.f):(-1.f) * powf(10.f, -fabsf(__f) / 20.f) * 128.f); \
+} while (0)
+
+#define vin_utd_coefficients_set_nlev(_ctx, _ch, _utd, _nlev) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _nlev; \
+	(_ctx)->eop_utd_coefficients[__ch].nlev = (powf(10.f, (__f / 20.f)) * 32768.f); \
+} while (0)
+
+#define vin_utd_coefficients_set_levelh(_ctx, _ch, _utd, _levelh) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	float __f = _levelh; \
+	u_int16_t __imm = (powf(10.f, (__f / 20.f)) * 32768.f); \
+	(_ctx)->eop_utd_coefficients[__ch].levelh = __imm - (_ctx)->eop_utd_coefficients[__ch].nlev; \
+} while (0)
+
+#define vin_utd_coefficients_set_agap(_ctx, _ch, _utd, _agap) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	(_ctx)->eop_utd_coefficients[__ch].agap = _agap / 4; \
+} while (0)
+
+#define vin_utd_coefficients_set_rtime(_ctx, _ch, _utd, _rtime) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	(_ctx)->eop_utd_coefficients[__ch].rtime = _rtime / 16; \
+} while (0)
+
+#define vin_utd_coefficients_set_abreak(_ctx, _ch, _utd, _abreak) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	(_ctx)->eop_utd_coefficients[__ch].abreak = _abreak; \
+} while (0)
+
+#define vin_utd_coefficients_set_rgap(_ctx, _ch, _utd, _rgap) \
+do { \
+	int __ch = ((_utd == 2)?(4):(0)) + _ch; \
+	(_ctx)->eop_utd_coefficients[__ch].rgap = _rgap / 4; \
+} while (0)
+
+extern int vin_cpt_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
+
+#define vin_cpt_coefficients_write(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_cpt_coefficients(_ctx, VIN_WRITE, _ch); \
+	__res; \
+})
+
+#define vin_cpt_coefficients_read(_ctx, _ch) \
+({ \
+	int __res; \
+	__res = vin_cpt_coefficients(_ctx, VIN_READ, _ch); \
+	__res; \
+})
+
+#define vin_cpt_coefficients_set_goe_1(_ctx, _ch, _goe_1) \
+do { \
+	float __f = _goe_1; \
+	(_ctx)->eop_cpt_coefficients[_ch].goe_1 = (cos((2.f * M_PI * __f) / 8000.f) * 32768.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_goe_2(_ctx, _ch, _goe_2) \
+do { \
+	float __f = _goe_2; \
+	(_ctx)->eop_cpt_coefficients[_ch].goe_2 = (cos((2.f * M_PI * __f) / 8000.f) * 32768.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_goe_3(_ctx, _ch, _goe_3) \
+do { \
+	float __f = _goe_3; \
+	(_ctx)->eop_cpt_coefficients[_ch].goe_3 = (cos((2.f * M_PI * __f) / 8000.f) * 32768.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_goe_4(_ctx, _ch, _goe_4) \
+do { \
+	float __f = _goe_4; \
+	(_ctx)->eop_cpt_coefficients[_ch].goe_4 = (cos((2.f * M_PI * __f) / 8000.f) * 32768.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_lev_1(_ctx, _ch, _win, _lev_1) \
+do { \
+	float __l = _lev_1; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].lev_1 = (powf(10.f, ((__l + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_lev_2(_ctx, _ch, _win, _lev_2) \
+do { \
+	float __l = _lev_2; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].lev_2 = (powf(10.f, ((__l + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_lev_3(_ctx, _ch, _win, _lev_3) \
+do { \
+	float __l = _lev_3; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].lev_3 = (powf(10.f, ((__l + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_lev_4(_ctx, _ch, _win, _lev_4) \
+do { \
+	float __l = _lev_4; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].lev_4 = (powf(10.f, ((__l + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_twist_12(_ctx, _ch, _twist_12) \
+do { \
+	float __t = _twist_12; \
+	(_ctx)->eop_cpt_coefficients[_ch].twist_12 = (powf(10.f, (__t / 10.f)) * 128.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_twist_34(_ctx, _ch, _twist_34) \
+do { \
+	float __t = _twist_34; \
+	(_ctx)->eop_cpt_coefficients[_ch].twist_34 = (powf(10.f, (__t / 10.f)) * 128.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_t_1(_ctx, _ch, _t_1) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].t_1 = _t_1; \
+} while (0)
+
+// MSK_1 BEGIN
+
+#define vin_cpt_coefficients_set_msk_1_p(_ctx, _ch, _p) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.p = _p; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_e(_ctx, _ch, _e) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.e = _e; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f12or34(_ctx, _ch, _f12or34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f12or34 = _f12or34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f3xor4(_ctx, _ch, _f3xor4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f3xor4 = _f3xor4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f1xor2(_ctx, _ch, _f1xor2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f1xor2 = _f1xor2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_tw34(_ctx, _ch, _tw34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.tw34 = _tw34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_tw12(_ctx, _ch, _tw12) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.tw12 = _tw12; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f4(_ctx, _ch, _f4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f4 = _f4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f3(_ctx, _ch, _f3) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f3 = _f3; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f2(_ctx, _ch, _f2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f2 = _f2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_1_f1(_ctx, _ch, _f1) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_1.f1 = _f1; \
+} while (0)
+
+// MSK_1 END
+
+#define vin_cpt_coefficients_set_t_2(_ctx, _ch, _t_2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].t_2 = _t_2; \
+} while (0)
+
+// MSK_2 BEGIN
+
+#define vin_cpt_coefficients_set_msk_2_p(_ctx, _ch, _p) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.p = _p; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_e(_ctx, _ch, _e) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.e = _e; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f12or34(_ctx, _ch, _f12or34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f12or34 = _f12or34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f3xor4(_ctx, _ch, _f3xor4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f3xor4 = _f3xor4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f1xor2(_ctx, _ch, _f1xor2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f1xor2 = _f1xor2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_tw34(_ctx, _ch, _tw34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.tw34 = _tw34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_tw12(_ctx, _ch, _tw12) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.tw12 = _tw12; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f4(_ctx, _ch, _f4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f4 = _f4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f3(_ctx, _ch, _f3) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f3 = _f3; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f2(_ctx, _ch, _f2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f2 = _f2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_2_f1(_ctx, _ch, _f1) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_2.f1 = _f1; \
+} while (0)
+
+// MSK_2 END
+
+#define vin_cpt_coefficients_set_t_3(_ctx, _ch, _t_3) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].t_3 = _t_3; \
+} while (0)
+
+// MSK_3 BEGIN
+
+#define vin_cpt_coefficients_set_msk_3_p(_ctx, _ch, _p) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.p = _p; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_e(_ctx, _ch, _e) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.e = _e; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f12or34(_ctx, _ch, _f12or34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f12or34 = _f12or34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f3xor4(_ctx, _ch, _f3xor4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f3xor4 = _f3xor4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f1xor2(_ctx, _ch, _f1xor2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f1xor2 = _f1xor2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_tw34(_ctx, _ch, _tw34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.tw34 = _tw34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_tw12(_ctx, _ch, _tw12) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.tw12 = _tw12; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f4(_ctx, _ch, _f4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f4 = _f4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f3(_ctx, _ch, _f3) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f3 = _f3; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f2(_ctx, _ch, _f2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f2 = _f2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_3_f1(_ctx, _ch, _f1) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_3.f1 = _f1; \
+} while (0)
+
+// MSK_3 END
+
+#define vin_cpt_coefficients_set_t_4(_ctx, _ch, _t_4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].t_4 = _t_4; \
+} while (0)
+
+// MSK_4 BEGIN
+
+#define vin_cpt_coefficients_set_msk_4_p(_ctx, _ch, _p) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.p = _p; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_e(_ctx, _ch, _e) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.e = _e; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f12or34(_ctx, _ch, _f12or34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f12or34 = _f12or34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f3xor4(_ctx, _ch, _f3xor4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f3xor4 = _f3xor4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f1xor2(_ctx, _ch, _f1xor2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f1xor2 = _f1xor2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_tw34(_ctx, _ch, _tw34) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.tw34 = _tw34; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_tw12(_ctx, _ch, _tw12) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.tw12 = _tw12; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f4(_ctx, _ch, _f4) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f4 = _f4; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f3(_ctx, _ch, _f3) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f3 = _f3; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f2(_ctx, _ch, _f2) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f2 = _f2; \
+} while (0)
+
+#define vin_cpt_coefficients_set_msk_4_f1(_ctx, _ch, _f1) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].msk_4.f1 = _f1; \
+} while (0)
+
+// MSK_4 END
+
+#define vin_cpt_coefficients_set_tim_tol(_ctx, _ch, _tim_tol) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].tim_tol = _tim_tol; \
+} while (0)
+
+#define vin_cpt_coefficients_set_nr(_ctx, _ch, _nr) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].nr = _nr; \
+} while (0)
+
+#define vin_cpt_coefficients_set_pow_pause(_ctx, _ch, _win, _pow_pause) \
+do { \
+	float __p = _pow_pause; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].pow_pause = (powf(10.f, ((__p + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_fp_tp_r(_ctx, _ch, _fp_tp_r) \
+do { \
+	float __f = _fp_tp_r; \
+	(_ctx)->eop_cpt_coefficients[_ch].fp_tp_r = (powf(10.f, (__f / 10.f)) * 32768.f); \
+} while (0)
+
+#define vin_cpt_coefficients_set_at_power(_ctx, _ch, _win, _at_power) \
+do { \
+	float __p = _at_power; \
+	float __c; \
+	if (_win == VIN_WS_HAMMING) { \
+		__c = 0.61f; \
+	} else { \
+		__c = -1.58f; \
+	} \
+	(_ctx)->eop_cpt_coefficients[_ch].at_power = (powf(10.f, ((__p + __c) / 10.f)) * 16384.f); \
+} while (0)
+
+
+#define vin_cpt_coefficients_set_at_dur(_ctx, _ch, _at_dur) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].at_dur = _at_dur; \
+} while (0)
+
+#define vin_cpt_coefficients_set_at_gap(_ctx, _ch, _at_gap) \
+do { \
+	(_ctx)->eop_cpt_coefficients[_ch].at_gap = _at_gap; \
 } while (0)
 
 extern int vin_utg_coefficients(struct vinetic_context *ctx, unsigned int rw, unsigned int ch);
@@ -1989,6 +2644,112 @@ extern int vin_utg_set_asterisk_tone(struct vinetic_context *ctx, unsigned int c
 
 extern double vin_gainem_to_gaindb(u_int8_t em);
 extern u_int8_t vin_gaindb_to_gainem(double g);
+
+#define vin_set_utd_1_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_utd_1_handler[_ch].handler = _handler; \
+	(_ctx)->vin_utd_1_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.utd1_ok = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.utd1_ok = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.utd1_ok = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.utd1_ok = 1; \
+	} \
+} while (0)
+
+#define vin_reset_utd_1_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_utd_1_handler[_ch].handler = NULL; \
+	(_ctx)->vin_utd_1_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.utd1_ok = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.utd1_ok = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.utd1_ok = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.utd1_ok = 0; \
+	} \
+} while (0)
+
+#define vin_set_utd_2_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_utd_2_handler[_ch].handler = _handler; \
+	(_ctx)->vin_utd_2_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.utd2_ok = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.utd2_ok = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.utd2_ok = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.utd2_ok = 1; \
+	} \
+} while (0)
+
+#define vin_reset_utd_2_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_utd_2_handler[_ch].handler = NULL; \
+	(_ctx)->vin_utd_2_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.utd2_ok = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.utd2_ok = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.utd2_ok = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.utd2_ok = 0; \
+	} \
+} while (0)
+
+#define vin_set_cpt_handler(_ctx, _ch, _handler, _data) \
+do { \
+	(_ctx)->vin_cpt_handler[_ch].handler = _handler; \
+	(_ctx)->vin_cpt_handler[_ch].data = _data; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.res = 3; \
+		(_ctx)->status_mask.sr.sre2_3.bits.res0 = 1; \
+		(_ctx)->status_mask.sr.sre2_3.bits.res1 = 1; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.res = 3; \
+		(_ctx)->status_mask.sr.sre2_2.bits.res0 = 1; \
+		(_ctx)->status_mask.sr.sre2_2.bits.res1 = 1; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.res = 3; \
+		(_ctx)->status_mask.sr.sre2_1.bits.res0 = 1; \
+		(_ctx)->status_mask.sr.sre2_1.bits.res1 = 1; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.res = 3; \
+		(_ctx)->status_mask.sr.sre2_0.bits.res0 = 1; \
+		(_ctx)->status_mask.sr.sre2_0.bits.res1 = 1; \
+	} \
+} while (0)
+
+#define vin_reset_cpt_handler(_ctx, _ch) \
+do { \
+	(_ctx)->vin_cpt_handler[_ch].handler = NULL; \
+	(_ctx)->vin_cpt_handler[_ch].data = NULL; \
+	if (_ch == 3) { \
+		(_ctx)->status_mask.sr.sre1_3.bits.res = 0; \
+		(_ctx)->status_mask.sr.sre2_3.bits.res0 = 0; \
+		(_ctx)->status_mask.sr.sre2_3.bits.res1 = 0; \
+	} else if (_ch == 2) { \
+		(_ctx)->status_mask.sr.sre1_2.bits.res = 0; \
+		(_ctx)->status_mask.sr.sre2_3.bits.res0 = 0; \
+		(_ctx)->status_mask.sr.sre2_2.bits.res1 = 0; \
+	} else if (_ch == 1) { \
+		(_ctx)->status_mask.sr.sre1_1.bits.res = 0; \
+		(_ctx)->status_mask.sr.sre2_1.bits.res0 = 0; \
+		(_ctx)->status_mask.sr.sre2_1.bits.res1 = 0; \
+	} else { \
+		(_ctx)->status_mask.sr.sre1_0.bits.res = 0; \
+		(_ctx)->status_mask.sr.sre2_0.bits.res0 = 0; \
+		(_ctx)->status_mask.sr.sre2_0.bits.res1 = 0; \
+	} \
+} while (0)
 
 #define vin_set_cis_buf_handler(_ctx, _ch, _handler, _data) \
 do { \
