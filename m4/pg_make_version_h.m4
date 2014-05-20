@@ -6,7 +6,9 @@
 AC_DEFUN([PG_MAKE_VERSION_H],
 [
 
+mkdir -p `dirname $1`
 rm -f $1
+touch $1
 
 printf "/******************************************************************************/\n" >> $1
 printf "/* version.h                                                                  */\n" >> $1
